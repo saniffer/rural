@@ -1,0 +1,786 @@
+///$tab 2 - Extract - SIAGRI
+LIB CONNECT TO 'Siagri';
+//LIB CONNECT TO 'Qlik (ruralempresas_qlikuser)';
+
+ConsultorLoja:
+SELECT DISTINCT
+    p.CODI_PES,
+    p.NOME_PES,
+    p.CODI_EMP
+FROM RURALB.VENDEDORCLI v
+INNER JOIN RURALB.VENDEDORESEMP v2 ON v.CODI_TRA = v2.CODI_TRA 
+LEFT JOIN RURALB.PESSOAL p ON v.COD1_PES = p.CODI_PES 
+LEFT JOIN RURALB.PESSOAL p2 ON v.COD2_PES = p2.CODI_PES;
+
+STORE ConsultorLoja INTO [lib://0.Extract/Migracao/ConsultorLoja.qvd](qvd);
+Drop Table ConsultorLoja;
+
+////////////////////////////////////////////
+
+RelatorioFaturado:
+SELECT * FROM (
+SELECT
+	nt.demi_not AS Data_Emissao,
+	nt.nota_not AS Numero_NF,
+	substr(nt.situ_not, 1) AS Situacao_NF,
+	nt.ccfo_cfo AS CFOP,
+	nt.codi_emp AS Loja,
+	cl.desc_cic AS Ciclo,
+	it.codi_psv AS Cod_Produto,
+	ps.desc_psv AS Desc_Prod_Original,
+	gr.desc_gpr AS Grupo_Original,
+	sg.desc_sbg AS Subgrupo,
+	pa.codi_tra AS Cod_Parceiro,
+	vi.codi_vin AS Cod_Vinculo,
+	pa.raza_tra AS Parceiro,
+	vd.nome_pes,
+	mu.desc_mun AS Municipio,
+	mu.esta_mun AS UF,
+	pd.MARC_PRO AS Marca_Produto,
+	it.ITEM_INO,
+	It.QTDE_INO,
+	round(It.VLIQ_INO, 6) AS Valor_Unitario,
+	round(It.CMVD_INO, 6) AS Custo_Medio,
+	round(It.CTAB_INO, 6) AS Custo_Tabela,
+	It.DANT_TAB AS Desconto_Fin_Tabela,
+	round(It.PVTB_INO, 6) AS Preco_Venda_Tabela,
+	It.TABE_CTA AS Codigo_Tabela,
+	tp.DESC_CTA AS Descricao_Tabela,
+	nt.cod1_pes AS Codigo_Consultor,
+	co.codi_ind AS Codigo_Indexador,
+	(
+	SELECT
+		valor_ind
+	FROM
+		TABLE(ruralb.ret_vlorind(nt.codi_emp, co.codi_ind, nt.demi_not))) AS Valor_Indexador,
+	cob.duplicata,
+	cob.vencimento,
+	cob.parcelas
+FROM
+	RURALB.INOTA IT
+LEFT JOIN RURALB.NOTA NT ON
+	NT.NPRE_NOT = IT.NPRE_NOT
+LEFT JOIN RURALB.PRODSERV PS ON
+	PS.CODI_PSV = IT.CODI_PSV
+LEFT JOIN RURALB.SUBGRUPO SG ON
+	SG.CODI_SBG = PS.CODI_SBG
+	AND SG.CODI_GPR = PS.CODI_GPR
+LEFT JOIN RURALB.GRUPO GR ON
+	GR.CODI_GPR = SG.CODI_GPR
+LEFT JOIN RURALB.PRODUTO PD ON
+	PD.CODI_PSV = PS.CODI_PSV
+LEFT JOIN RURALB.CFO CF ON
+	CF.CCFO_CFO = NT.CCFO_CFO
+LEFT JOIN RURALB.PESSOAL VD ON
+	VD.CODI_PES = NT.COD1_PES
+LEFT JOIN RURALB.CICLO CL ON
+	CL.CODI_CIC = NT.CODI_CIC
+LEFT JOIN RURALB.TRANSAC PA ON
+	PA.CODI_TRA = NT.CODI_TRA
+LEFT JOIN RURALB.VINCULO VI ON
+	VI.CODI_VIN = PA.CODI_TRA
+LEFT JOIN RURALB.CONDICAO CO ON
+	CO.COND_CON = NT.COND_CON
+LEFT JOIN RURALB.TRANSAC PA2 ON
+	PA2.CODI_TRA = VI.CODI_TRA
+LEFT JOIN RURALB.CADEMP EM ON
+	EM.CODI_EMP = NT.CODI_EMP
+LEFT JOIN RURALB.MUNICIPIO MU ON
+	MU.CODI_MUN = PA.CODI_MUN
+LEFT JOIN RURALB.CABTAB TP ON
+	TP.TABE_CTA = IT.TABE_CTA
+LEFT JOIN (
+	SELECT
+		NOTA_NOT, CODI_EMP, SERI_NOT, NVL(MAX(DUPLICATACRC), MAX(DUPLICATAORIG)) AS DUPLICATA, NVL(MAX(VENCIMENTOCRC), MAX(VENCIMENTOORIG)) AS VENCIMENTO, NVL(MAX(PARCELASCRC), MAX(PARCELASORIG)) AS PARCELAS, MAX(PARCELASORIG) AS PARCELASORIG
+	FROM
+		(
+		SELECT
+			NF1.NOTA_NOT, NF1.CODI_EMP, NF1.SERI_NOT, TO_CHAR(REC2.NUME_CBR) AS DUPLICATACRC, MIN(REC3.VEN2_REC) AS VENCIMENTOCRC, MAX(REC1.NPAR_REC) AS PARCELASCRC, NULL AS DUPLICATAORIG, NULL AS VENCIMENTOORIG, NULL AS PARCELASORIG
+		FROM
+			(
+			SELECT
+				NT.NOTA_NOT, NT.CODI_EMP, NT.SERI_NOT, MAX(CTRL_CBR) AS CTRL_CBR
+			FROM
+				RURALB.NOTACRC NCR
+			INNER JOIN RURALB.NOTA NT ON
+				(NCR.NDOC_NOC = NT.NOTA_NOT
+				AND NCR.CODI_EMP = NT.CODI_EMP
+				AND NCR.SDOC_NOC = NT.SERI_NOT)
+			WHERE
+				NCR.TDOC_NOC = 'NE'
+				AND TO_CHAR(NT.DEMI_NOT, 'DD/MM/YYYY') >= '01/01/2015'
+				AND ((NT.CODI_EMP < 48)
+				OR (NT.CODI_EMP = 98))
+				AND NT.CODI_EMP NOT IN (7, 8, 10)
+				AND NT.SITU_NOT NOT IN (9)
+				AND NT.NOTA_NOT NOT IN (999999999)
+				AND TO_NUMBER(SUBSTR(NT.CCFO_CFO, 0, 4)) IN (1202, 1504, 2201, 2202, 2504, 5101, 5102, 5106, 5114, 5115, 5117, 5119, 5120, 5502, 5933, 6102, 6106, 6114, 6115, 6117, 6119, 6120, 6502, 6933)
+			GROUP BY
+				NT.NOTA_NOT, NT.CODI_EMP, NT.SERI_NOT) NF1
+		LEFT JOIN RURALB.RECEBER REC1 ON
+			(REC1.CTRL_CBR = NF1.CTRL_CBR)
+		LEFT JOIN RURALB.CABREC REC2 ON
+			(REC2.CTRL_CBR = NF1.CTRL_CBR)
+		LEFT JOIN RURALB.RECEBER REC3 ON
+			(REC3.CTRL_CBR = NF1.CTRL_CBR)
+		WHERE
+			REC3.VLOR_REC =(
+			SELECT
+				MAX(REC4.VLOR_REC)
+			FROM
+				RURALB.RECEBER REC4
+			WHERE
+				REC3.CTRL_CBR = REC4.CTRL_CBR)
+		GROUP BY
+			NF1.NOTA_NOT, NF1.CODI_EMP, NF1.SERI_NOT, TO_CHAR(REC2.NUME_CBR)
+	UNION ALL
+		SELECT
+			NTA4.NOTA_NOT, NTA4.CODI_EMP, NTA4.SERI_NOT, NULL AS DUPLICATACRC, NULL AS VENCIMENTOCRC, NULL AS PARCELASOCRC, to_char(CREC.nume_cbr), MIN(REC.VEN2_REC) AS VENCIMENTOORIG, MAX(REC.NPAR_REC) AS PARCELASORIG
+		FROM
+			(
+			SELECT
+				NTA3.NOTA_NOT, NTA3.CODI_EMP, NTA3.SERI_NOT, MAX(NCR.CTRL_CBR) AS CTRL_CBR
+			FROM
+				(
+				SELECT
+					NTA2.NOTA_NOT, NTA2.CODI_EMP, NTA2.SERI_NOT, NTA2.CODI_EMP_ORI, NTA2.SERO_NFR_ORI, (
+					SELECT
+						MAX(NT1.NOTA_NOT)
+					FROM
+						RURALB.NOTA NT1
+					WHERE
+						NT1.NPRE_NOT = NTA2.NOTO_NFR_ORI) AS NOTA_NOT_ORI
+				FROM
+					(
+					SELECT
+						NTA.NOTA_NOT, NTA.CODI_EMP, NTA.SERI_NOT, MAX(NTA.CODI_EMP_ORI) AS CODI_EMP_ORI, MAX(NTA.SERO_NFR) AS SERO_NFR_ORI, MAX(NTA.NOTO_NFR) AS NOTO_NFR_ORI
+					FROM
+						(
+						SELECT
+							'NOTA' AS TIPO, NT.NOTA_NOT, NT.CODI_EMP, NT.SERI_NOT, NTR.CODI_EMP AS CODI_EMP_ORI, NTR.SERO_NFR, 0 AS CTRL_CPG, 0 AS CTRL_CBR, NTR.NOTO_NFR
+						FROM
+							RURALB.NOTA NT
+						INNER JOIN RURALB.NOTAORIG NTR ON
+							(NTR.NOTD_NFR = NT.NPRE_NOT)
+						WHERE
+							TO_CHAR(NT.DEMI_NOT, 'DD/MM/YYYY') >= '01/01/2015'
+							--NT.DEMI_NOT >= '01.01.2015'							
+							AND ((NT.CODI_EMP < 48)
+							OR (NT.CODI_EMP = 98))
+							AND NT.CODI_EMP NOT IN (7, 8, 10)
+							AND NT.SITU_NOT NOT IN (9)
+							AND NT.NOTA_NOT NOT IN (999999999)
+							AND TO_NUMBER(SUBSTR(NT.CCFO_CFO, 0, 4)) IN (1202, 1504, 2201, 2202, 2504, 5101, 5102, 5106, 5114, 5115, 5117, 5119, 5120, 5502, 5933, 6102, 6106, 6114, 6115, 6117, 6119, 6120, 6502, 6933) ) NTA
+					GROUP BY
+						NTA.NOTA_NOT, NTA.CODI_EMP, NTA.SERI_NOT) NTA2 )NTA3
+			LEFT JOIN RURALB.NOTACRC NCR ON
+				ncr.ndoc_noc = NTA3.NOTA_NOT_ORI
+				AND ncr.codi_emp = NTA3.CODI_EMP_ORI
+				AND ncr.sdoc_noc = NTA3.SERO_NFR_ORI
+				AND ncr.tdoc_noc = 'NE'
+			GROUP BY
+				NTA3.NOTA_NOT, NTA3.CODI_EMP, NTA3.SERI_NOT) NTA4
+		LEFT JOIN RURALB.CABREC CREC ON
+			(CREC.CTRL_CBR = NTA4.CTRL_CBR)
+		LEFT JOIN RURALB.RECEBER REC ON
+			(REC.CTRL_CBR = NTA4.CTRL_CBR)
+		GROUP BY
+			NTA4.NOTA_NOT, NTA4.CODI_EMP, NTA4.SERI_NOT, to_char(CREC.nume_cbr))
+	GROUP BY
+		NOTA_NOT, CODI_EMP, SERI_NOT) COB ON
+	(COB.NOTA_NOT = NT.NOTA_NOT
+	AND COB.CODI_EMP = NT.CODI_EMP
+	AND COB.SERI_NOT = NT.SERI_NOT)
+WHERE
+	--NT.DEMI_NOT >= '01.01.2015'
+	TO_CHAR(NT.DEMI_NOT, 'DD/MM/YYYY') >= '01/01/2015'
+	AND ((NT.CODI_EMP < 48)
+	OR (NT.CODI_EMP = 98))
+	AND NT.CODI_EMP NOT IN (7, 8, 10)
+	AND NT.SITU_NOT NOT IN (9)
+	AND NT.NOTA_NOT NOT IN (999999999)
+	AND GR.CODI_GPR NOT IN (5, 6, 10, 11, 11000007, 11000008, 11000011, 11000012, 11000013, 11000015, 11000016, 11000018, 11000023, 11000024, 11000026, 11000027)
+	AND TO_NUMBER(SUBSTR(NT.CCFO_CFO, 0, 4)) IN (1202, 1504, 2201, 2202, 2504, 5101, 5102, 5106, 5114, 5115, 5117, 5119, 5120, 5502, 5933, 6102, 6106, 6114, 6115, 6117, 6119, 6120, 6502, 6933)
+UNION ALL
+SELECT
+	nt.drec_nfe,
+	nt.nume_nfe,
+	substr(nt.rast_nfe, 1),
+	nt.ccfo_cfo,
+	nt.codi_emp,
+	cl.desc_cic,
+	it.codi_psv,
+	ps.desc_psv,
+	gr.desc_gpr,
+	sg.desc_sbg,
+	pa.codi_tra,
+	vi.codi_vin,
+	pa.raza_tra,
+	vd.nome_pes,
+	mu.desc_mun,
+	mu.esta_mun,
+	pd.MARC_PRO,
+	it.ITEM_INF,
+	It.QUAN_INF,
+	round(It.VLIQ_INF, 6),
+	round(It.CMED_INF, 6),
+	round(It.CTAB_INF, 6),
+	0,
+	It.PVTB_INF,
+	1,
+	'NULL',
+	nt.cod1_pes,
+	co.codi_ind,
+	(
+	SELECT
+		valor_ind
+	FROM
+		TABLE(ruralb.ret_vlorind(nt.codi_emp, co.codi_ind, nt.drec_nfe))) AS Valor_Indexador,
+	rec.duplicata,
+	rec.vencimento,
+	rec.parcela
+FROM
+	RURALB.INFENTRA IT
+INNER JOIN RURALB.NFENTRA NT ON
+	NT.CODI_EMP = IT.CODI_EMP
+	AND NT.CODI_TRA = IT.CODI_TRA
+	AND NT.NUME_NFE = IT.NUME_NFE
+	AND NT.SERI_NFE = IT.SERI_NFE
+LEFT JOIN RURALB.CFO CF ON
+	CF.CCFO_CFO = NT.CCFO_CFO
+LEFT JOIN RURALB.CICLO CL ON
+	CL.CODI_CIC = NT.CODI_CIC
+LEFT JOIN RURALB.PRODSERV PS ON
+	PS.CODI_PSV = IT.CODI_PSV
+LEFT JOIN RURALB.SUBGRUPO SG ON
+	SG.CODI_SBG = PS.CODI_SBG
+	AND SG.CODI_GPR = PS.CODI_GPR
+LEFT JOIN RURALB.GRUPO GR ON
+	GR.CODI_GPR = SG.CODI_GPR
+LEFT JOIN RURALB.PRODUTO PD ON
+	PD.CODI_PSV = PS.CODI_PSV
+LEFT JOIN RURALB.PESSOAL VD ON
+	VD.CODI_PES = NT.COD1_PES
+LEFT JOIN RURALB.TRANSAC PA ON
+	PA.CODI_TRA = NT.CODI_TRA
+LEFT JOIN RURALB.VINCULO VI ON
+	VI.CODI_VIN = PA.CODI_TRA
+LEFT JOIN RURALB.CONDICAO CO ON
+	CO.COND_CON = NT.COND_CON
+LEFT JOIN RURALB.CADEMP EM ON
+	EM.CODI_EMP = NT.CODI_EMP
+LEFT JOIN RURALB.MUNICIPIO MU ON
+	MU.CODI_MUN = PA.CODI_MUN
+LEFT JOIN (
+	SELECT
+		NF3.NUME_NFE, NF3.CODI_EMP, NF3.SERI_NFE, MAX(DUPLICATACRC) AS DUPLICATA, MAX(DATAVENCIMENTOCRC) AS VENCIMENTO, MAX(NUMEROPARCELASCRC) AS PARCELA
+	FROM
+		(/*SELECT NFEN1.NUME_NFE,                               NFEN1.CODI_EMP,                               NFEN1.SERI_NFE,                               TO_CHAR(CPAG.DOCU_CPG) AS DUPLICATAP,                               MIN(DVEN_PAG) AS DATAVENCIMENTOP,                               MAX(NPAR_PAG) AS NUMEROPARCELASP,                               NULL AS DUPLICATACRC,                               NULL AS VENCIMENTOCRC,                               NULL AS NUMEROPARCELACRC                         FROM (SELECT NT.NUME_NFE,                                      NT.CODI_EMP,                                      NT.SERI_NFE,                                      MAX(NCP.CTRL_CPG) AS CTRL_CPG                                 FROM RURALB.NFENTRA NT INNER JOIN                                      RURALB.NOTACPG NCP ON (NCP.NDOC_NCP = NT.NUME_NFE AND                                                             NCP.CODI_EMP = NT.CODI_EMP AND                                                             NCP.SDOC_NCP = NT.SERI_NFE)                                WHERE NCP.TDOC_NCP IN ('NT')                                  AND NT.DREC_NFE >>= '01.01.2015'                                  AND NT.CODI_EMP << 48                                  AND NT.CODI_EMP NOT IN (7, 8, 10)                                  AND NT.RAST_NFE NOT IN (9)                                  AND NT.NUME_NFE NOT IN (999999999)                                  AND TO_NUMBER(SUBSTR(NT.CCFO_CFO, 0, 4)) IN                                      (1202, 1504, 2201, 2202, 2504, 5101, 5102, 5106, 5114, 5115,                                       5117, 5119, 5120, 5502, 5933, 6102, 6106, 6114, 6115, 6117, 6119,                                       6120, 6502, 6933)                                 GROUP BY NT.NUME_NFE,                                          NT.CODI_EMP,                                          NT.SERI_NFE) NFEN1 LEFT JOIN                                RURALB.PAGAR PAG ON (PAG.CTRL_CPG = NFEN1.CTRL_CPG)  LEFT JOIN                                RURALB.CABPAGAR CPAG ON (CPAG.CTRL_CPG = NFEN1.CTRL_CPG)                          WHERE PAG.VLOR_PAG = (SELECT MAX(VLOR_PAG)                                                 FROM RURALB.PAGAR PAG2                                                WHERE PAG2.CTRL_CPG = NFEN1.CTRL_CPG)                         GROUP BY NFEN1.NUME_NFE,                                  NFEN1.CODI_EMP,                                  NFEN1.SERI_NFE,                                  CPAG.DOCU_CPG                         UNION ALL*/
+		SELECT
+			NFEN2.NUME_NFE, NFEN2.CODI_EMP, NFEN2.SERI_NFE, NULL AS DUPLICATAP, NULL AS VENCIMENTOP, NULL AS NUMEROPARCELAP, TO_CHAR(NUME_CBR) AS DUPLICATACRC, MIN(VEN2_REC) AS DATAVENCIMENTOCRC, MAX(NPAR_REC) AS NUMEROPARCELASCRC
+		FROM
+			(
+			SELECT
+				NT.NUME_NFE, NT.CODI_EMP, NT.SERI_NFE, MAX(CTRL_CBR) AS CTRL_CBR
+			FROM
+				RURALB.NOTACRC NCR
+			INNER JOIN RURALB.NFENTRA NT ON
+				(NCR.NDOC_NOC = NT.NUME_NFE
+				AND NCR.CODI_EMP = NT.CODI_EMP
+				AND NCR.SDOC_NOC = NT.SERI_NFE)
+			WHERE
+				NCR.TDOC_NOC IN ('NT')
+				AND TO_CHAR(NT.DREC_NFE, 'DD/MM/YYYY') >= '01/01/2015'
+				AND ((NT.CODI_EMP < 48)
+				OR (NT.CODI_EMP = 98))
+				AND NT.CODI_EMP NOT IN (7, 8, 10)
+				AND NT.RAST_NFE NOT IN (9)
+				AND NT.NUME_NFE NOT IN (999999999)
+				AND TO_NUMBER(SUBSTR(NT.CCFO_CFO, 0, 4)) IN (1202, 1504, 2201, 2202, 2504, 5101, 5102, 5106, 5114, 5115, 5117, 5119, 5120, 5502, 5933, 6102, 6106, 6114, 6115, 6117, 6119, 6120, 6502, 6933)
+			GROUP BY
+				NT.NUME_NFE, NT.CODI_EMP, NT.SERI_NFE) NFEN2
+		LEFT JOIN RURALB.RECEBER REC ON
+			(REC.CTRL_CBR = NFEN2.CTRL_CBR)
+		LEFT JOIN RURALB.CABREC REC ON
+			(REC.CTRL_CBR = NFEN2.CTRL_CBR)
+		GROUP BY
+			NFEN2.NUME_NFE, NFEN2.CODI_EMP, NFEN2.SERI_NFE, TO_CHAR(NUME_CBR)) NF3
+	GROUP BY
+		NF3.NUME_NFE, NF3.CODI_EMP, NF3.SERI_NFE) REC ON
+	(REC.NUME_NFE = nt.nume_nfe
+	AND REC.CODI_EMP = nt.codi_emp
+	AND REC.SERI_NFE = nt.SERI_NFE)
+WHERE
+	TO_CHAR(NT.DREC_NFE, 'DD/MM/YYYY') >= '01/01/2015'
+	AND ((NT.CODI_EMP < 48)
+	OR (NT.CODI_EMP = 98))
+	AND NT.CODI_EMP NOT IN (7, 8, 10)
+	AND NT.RAST_NFE NOT IN (9)
+	AND NT.NUME_NFE NOT IN (999999999)
+	AND TO_NUMBER(SUBSTR(NT.CCFO_CFO, 0, 4)) IN (1202, 1504, 2201, 2202, 2504, 5101, 5102, 5106, 5114, 5115, 5117, 5119, 5120, 5502, 5933, 6102, 6106, 6114, 6115, 6117, 6119, 6120, 6502, 6933)
+);
+STORE RelatorioFaturado INTO [lib://0.Extract/Migracao/RelatorioFaturado.qvd](qvd);
+Drop Table RelatorioFaturado;
+
+/////////////////////////////////////////////////
+VW_FINANCEIRO_ADT_DEV:
+SELECT
+    CBR.CODI_EMP                                                                AS FILIAL,
+    CASE WHEN CBR.CODI_EMP IN (20,12,13)    THEN 'QUERENCIA'
+         WHEN CBR.CODI_EMP IN (5,9,14,32)   THEN 'JATAI'
+         WHEN CBR.CODI_EMP IN (24,25,29)    THEN 'CANARANA'
+         WHEN CBR.CODI_EMP IN (15,35,41,43) THEN 'RIO VERDE'
+         WHEN CBR.CODI_EMP IN (33,37,39)    THEN 'PARAGOMINAS'
+         WHEN CBR.CODI_EMP = 30             THEN 'PRIMAVERA'
+         WHEN CBR.CODI_EMP IN (11,40,34,42) THEN 'REDENÇÃO'
+    ELSE 'ERRO' END                                                             AS REGIONAL,
+    CBR.DATA_CBR                                                                AS EMISSAO,
+    RTRIM(TRA.RAZA_TRA)                                                         AS PARCEIRO,
+    TO_CHAR(CBR.NUME_CBR)|| '-' || CBR.SERI_CBR || '/' || TO_CHAR(REC.NPAR_REC) AS DOCUMENTO,
+    TO_CHAR(REC.NPAR_REC)                                                       AS PARCELA,
+    REC.VENC_REC                                                                AS VENCIMENTO,
+    RTRIM(CIC.DESC_CIC)                                                         AS SAFRA,
+    CASE WHEN REC.CODI_IND IS NULL THEN 'REAL' ELSE IND.DESC_IND END            AS MOEDA,
+    CASE WHEN TIP.TIPO_TDO='C' THEN REC.VLOR_REC*(-1) ELSE REC.VLOR_REC END     AS CRC_ORIGINAL,
+    CASE WHEN TIP.TIPO_TDO='C' THEN REC.VLOR_REC*(-1) ELSE REC.VLOR_REC END -
+      CASE WHEN TIP.TIPO_TDO='C' AND REC.CODI_IND IS NULL     THEN (REC.VLOR_REC*(-1))-(SELECT VALOR*(-1) FROM TABLE(RURALB.VALOR_ABERTO_RECEBER(REC.CTRL_REC)))
+         WHEN TIP.TIPO_TDO='C' AND REC.CODI_IND IS NOT NULL THEN (REC.VLOR_REC*(-1))-(SELECT VALOR*(-1) FROM TABLE(RURALB.VALOR_ABERTO_RECEBER(REC.CTRL_REC)))
+         WHEN TIP.TIPO_TDO='D' AND REC.CODI_IND IS NOT NULL THEN (REC.VLOR_REC-(SELECT VALOR FROM TABLE(RURALB.VALOR_ABERTO_RECEBER(REC.CTRL_REC)))*COT.VLOR_VLR)
+         WHEN TIP.TIPO_TDO='D' AND REC.CODI_IND IS NULL     THEN (REC.VLOR_REC-(SELECT VALOR FROM TABLE(RURALB.VALOR_ABERTO_RECEBER(REC.CTRL_REC))))
+         ELSE 0
+    END AS CRC_SALDO,
+    CASE WHEN TIP.TIPO_TDO='C' AND REC.CODI_IND IS NULL     THEN (REC.VLOR_REC*(-1))-(SELECT VALOR*(-1) FROM TABLE(RURALB.VALOR_ABERTO_RECEBER(REC.CTRL_REC)))
+         WHEN TIP.TIPO_TDO='C' AND REC.CODI_IND IS NOT NULL THEN (REC.VLOR_REC*(-1))-(SELECT VALOR*(-1) FROM TABLE(RURALB.VALOR_ABERTO_RECEBER(REC.CTRL_REC)))
+         WHEN TIP.TIPO_TDO='D' AND REC.CODI_IND IS NOT NULL THEN (REC.VLOR_REC-(SELECT VALOR FROM TABLE(RURALB.VALOR_ABERTO_RECEBER(REC.CTRL_REC)))*COT.VLOR_VLR)
+         WHEN TIP.TIPO_TDO='D' AND REC.CODI_IND IS NULL     THEN (REC.VLOR_REC-(SELECT VALOR FROM TABLE(RURALB.VALOR_ABERTO_RECEBER(REC.CTRL_REC))))
+         ELSE 0
+    END                                                                         AS CRC_PAGO,
+    CASE WHEN REC.VENC_REC<=(SELECT SYSDATE FROM DUAL) AND TIP.TIPO_TDO='C' AND REC.CODI_IND IS NULL     THEN (SELECT VALOR*(-1) FROM TABLE(RURALB.VALOR_ABERTO_RECEBER(REC.CTRL_REC)))
+         WHEN REC.VENC_REC<=(SELECT SYSDATE FROM DUAL) AND TIP.TIPO_TDO='C' AND REC.CODI_IND IS NOT NULL THEN (SELECT VALOR*(-1) FROM TABLE(RURALB.VALOR_ABERTO_RECEBER(REC.CTRL_REC)))
+         WHEN REC.VENC_REC<=(SELECT SYSDATE FROM DUAL) AND TIP.TIPO_TDO='D' AND REC.CODI_IND IS NOT NULL THEN (SELECT VALOR FROM TABLE(RURALB.VALOR_ABERTO_RECEBER(REC.CTRL_REC)))*COT.VLOR_VLR
+         WHEN REC.VENC_REC<=(SELECT SYSDATE FROM DUAL) AND TIP.TIPO_TDO='D' AND REC.CODI_IND IS NULL     THEN (SELECT VALOR FROM TABLE(RURALB.VALOR_ABERTO_RECEBER(REC.CTRL_REC)))
+         ELSE 0 
+    END                                                                         AS CRC_VENCIDO,
+    CASE WHEN REC.VENC_REC >(SELECT SYSDATE FROM DUAL) AND TIP.TIPO_TDO='C' AND REC.CODI_IND IS NULL     THEN (SELECT VALOR*(-1) FROM TABLE(RURALB.VALOR_ABERTO_RECEBER(REC.CTRL_REC)))
+         WHEN REC.VENC_REC >(SELECT SYSDATE FROM DUAL) AND TIP.TIPO_TDO='C' AND REC.CODI_IND IS NOT NULL THEN (SELECT VALOR*(-1) FROM TABLE(RURALB.VALOR_ABERTO_RECEBER(REC.CTRL_REC)))
+         WHEN REC.VENC_REC >(SELECT SYSDATE FROM DUAL) AND TIP.TIPO_TDO='D' AND REC.CODI_IND IS NOT NULL THEN (SELECT VALOR FROM TABLE(RURALB.VALOR_ABERTO_RECEBER(REC.CTRL_REC)))*COT.VLOR_VLR
+         WHEN REC.VENC_REC >(SELECT SYSDATE FROM DUAL) AND TIP.TIPO_TDO='D' AND REC.CODI_IND IS NULL     THEN (SELECT VALOR FROM TABLE(RURALB.VALOR_ABERTO_RECEBER(REC.CTRL_REC))) 
+         ELSE 0 
+    END                                                                         AS CRC_A_VENCER,
+    TIP.DESC_TDO                                                                AS NATUREZA,
+    (SELECT ROUND(VALOR_IND,4) FROM TABLE(RURALB.RET_VLORIND (CBR.CODI_EMP, REC.CODI_IND, REC.DATA_VLR))) AS COTACAO,
+    SUBSTR(TIP.DESC_TDO,0,3)                                                    AS TIPO,
+    POR.DESC_POR                                                                AS PORTADOR
+
+FROM RURALB.RECEBER REC
+    INNER JOIN RURALB.CABREC     CBR ON REC.CTRL_CBR  =   CBR.CTRL_CBR 
+    INNER JOIN RURALB.TIPDOC     TIP ON TIP.CODI_TDO  =   CBR.CODI_TDO
+    INNER JOIN RURALB.TRANSAC    TRA ON TRA.CODI_TRA  =   CBR.CODI_TRA
+     LEFT JOIN RURALB.INDEXADOR  IND ON IND.CODI_IND  =   REC.CODI_IND
+     LEFT JOIN RURALB.CICLO      CIC ON CIC.CODI_CIC  =   CBR.CODI_CIC
+     LEFT JOIN RURALB.TIPCOB     TCO ON TCO.CODI_TCO  =   REC.CODI_TCO
+     LEFT JOIN RURALB.PORTADOR   POR ON POR.CODI_POR  =   REC.CODI_POR
+     LEFT JOIN RURALB.INDVALOR   COT ON COT.CODI_EMP  =   CBR.CODI_EMP
+                                    AND COT.CODI_IND  =   IND.CODI_IND
+                                    AND COT.DATA_VLR  =   REC.DATA_VLR
+WHERE
+        REC.SITU_REC   <>'C'
+        AND TIP.TIPO_TDO='C'
+        and SUBSTR(TIP.DESC_TDO,0,3)='ADI'
+        and TIP.DESC_TDO <> 'DUPLICATA SIMPLES'
+        AND CBR.CODI_EMP IN (5,6,9,11,12,13,14,15,20,24,25,29,30,32,33,34,35,37,39,40,41,42,43);
+
+STORE VW_FINANCEIRO_ADT_DEV INTO [lib://0.Extract/VW_FINANCEIRO_ADT_DEV.qvd](qvd);
+Drop Table VW_FINANCEIRO_ADT_DEV;
+
+
+
+/*
+EXTRAÇÃO EXECUTADA VIA PLANILHA
+VW_SAIDAS_FATURADAS:
+SELECT GRU.desc_gem REGIONAL, 
+       NF.codi_emp,
+       VDD.codi_pes,
+       PS.nome_pes,
+       NF.codi_tra, 
+       TR.raza_tra, 
+       NF.nota_not, 
+       NF.demi_not  dtemi, 
+       NF.data_vlr, 
+       INF.pedi_ped, 
+       INF.codi_psv, 
+       GR.desc_gpr, 
+       SB.desc_sbg, 
+       INF.tabe_cta, 
+       CT.desc_cta, 
+       PR.cori_pro, 
+       PR.cest_pro, 
+       PR.qte1_pro  qtd1, 
+       PR.qte2_pro  qtd2, 
+       PD.desc_psv, 
+       FT.func_top, 
+       CASE 
+         WHEN CF.fine_cfo = 5 THEN INF.qtde_ino * ( -1 ) 
+         ELSE INF.qtde_ino 
+       END          qtd3, 
+       CASE 
+         WHEN CF.fine_cfo = 5 THEN ( INF.vliq_ino * INF.qtde_ino ) * ( -1 ) 
+         ELSE ( INF.vliq_ino * INF.qtde_ino ) 
+       END          vliq,
+      CASE
+        WHEN CF.fine_cfo = 5  THEN ( INF.CTAB_INO * INF.qtde_ino) * ( -1  )
+        ELSE  (INF.CTAB_INO * INF.qtde_ino)
+      END           custo_unitario, 
+       EM.codi_emb, 
+       EM.desc_emb, 
+       CF.comp_cfo, 
+       PD.unid_psv, 
+       INF.dsof_ino, 
+       INF.vdof_ino, 
+       PE.vcto_ped, 
+       nf.ccfo_cfo, 
+       cf.desc_cfo, 
+       nf.codi_top, 
+       t.desc_top 
+FROM   ruralb.inota INF 
+       INNER JOIN ruralb.nota NF ON ( NF.npre_not = INF.npre_not ) 
+       LEFT OUTER JOIN ruralb.igrupoempresa IGRU ON ( IGRU.codi_emp = NF.codi_emp ) 
+       LEFT OUTER JOIN ruralb.grupoempresa GRU ON ( GRU.codi_gem = IGRU.codi_gem ) 
+       INNER JOIN ruralb.funcaotoper FT        ON ( FT.codi_top = NF.codi_top AND FT.codi_pto = 102 ) 
+       INNER JOIN ruralb.transac TR           ON ( TR.codi_tra = NF.codi_tra ) 
+       INNER JOIN ruralb.prodserv PD          ON ( PD.codi_psv = INF.codi_psv ) 
+       LEFT JOIN ruralb.grupo GR              ON ( PD.codi_gpr = GR.codi_gpr ) 
+       LEFT JOIN ruralb.subgrupo SB           ON ( PD.codi_gpr = SB.codi_gpr AND PD.codi_sbg = SB.codi_sbg ) 
+       LEFT JOIN ruralb.pedido PE             ON ( PE.codi_emp = INF.empr_ped ) AND ( PE.pedi_ped = INF.pedi_ped ) AND ( PE.seri_ped = INF.seri_ped ) 
+       LEFT JOIN ruralb.cfo CF                ON ( CF.ccfo_cfo = NF.ccfo_cfo ) 
+       LEFT JOIN ruralb.condicao CO           ON ( CO.cond_con = NF.cond_con ) 
+       LEFT JOIN ruralb.cliente CL            ON ( CL.codi_tra = TR.codi_tra ) 
+       LEFT JOIN ruralb.produto PR            ON ( PR.codi_psv = PD.codi_psv ) 
+       LEFT JOIN ruralb.embala EM             ON ( EM.codi_emb = PR.codi_emb ) 
+       LEFT JOIN ruralb.fornec FAB            ON ( PR.codi_tra = FAB.codi_tra ) 
+       LEFT JOIN ruralb.municipio MU          ON ( MU.codi_mun = TR.codi_mun ) 
+       LEFT JOIN ruralb.propried pro          ON ( pro.prop_pro = nf.prop_pro ) 
+       LEFT OUTER JOIN ruralb.vendedorcli VD  ON ( NF.codi_tra = VD.codi_tra AND NF.codi_emp = VD.codi_emp ) 
+       LEFT JOIN ruralb.vendedor VDD          ON ( VDD.codi_pes = NF.cod1_pes ) 
+       LEFT JOIN ruralb.pessoal PS            ON (PS.codi_pes = VDD.codi_pes)
+       LEFT JOIN ruralb.tipooper t            ON nf.codi_top = t.codi_top 
+       LEFT JOIN cabtab CT                    ON inf.tabe_cta = CT.tabe_cta 
+/ /* incluí este parâmetro para evitar duplicidades na emissão dos relatórios  
+where (NF.SITU_NOT = '5') and NF.CODI_EMP in (SELECT EMP.CODI_EMP FROM RURALB.CADEMP EMP WHERE EMP.CODI_EMP = 5 OR EMP.CMAT_EMP = 5) and PD.CODI_GPR in ('1','2','3','11000028') 
+UNION all
+SELECT GRU.desc_gem REGIONAL, 
+       NF.codi_emp, 
+        VDD.codi_pes,
+       PS.nome_pes,
+       NF.codi_tra, 
+       TR.raza_tra, 
+       NF.nume_nfe, 
+       NF.drec_nfe  dtemi, 
+       NF.data_vlr, 
+       INF.nume_pec, 
+       INF.codi_psv, 
+       GR.desc_gpr, 
+       SB.desc_sbg, 
+       NULL, 
+       NULL, 
+       PR.cori_pro, 
+       PR.cest_pro, 
+       PR.qte1_pro  qtd, 
+       PR.qte2_pro  qtd2, 
+       PD.desc_psv, 
+       FT.func_top, 
+       CASE 
+         WHEN CF.fine_cfo = 5 THEN INF.quan_inf * ( -1 ) 
+         ELSE INF.quan_inf 
+       END          qtd3, 
+       CASE 
+         WHEN CF.fine_cfo = 5 THEN ( INF.vliq_inf * INF.quan_inf ) * ( -1 ) 
+         ELSE ( INF.vliq_inf * INF.quan_inf ) 
+       END          vliq,
+       CASE
+        WHEN CF.fine_cfo = 5  THEN ( INF.CTAB_INF * INF.quan_inf) * ( -1  )
+        ELSE  (INF.CTAB_INF * INF.quan_inf)
+       END           custo_unitario,  
+       EM.codi_emb, 
+       EM.desc_emb, 
+       NULL         AS COMP_CFO, 
+       PD.unid_psv, 
+       NULL         AS DSOF_INO, 
+       NULL         AS VDOF_INO, 
+       NULL         AS vcto_ped, 
+       nf.ccfo_cfo, 
+       cf.desc_cfo, 
+       nf.codi_top, 
+       t.desc_top 
+FROM   ruralb.infentra INF 
+       INNER JOIN ruralb.nfentra NF               ON ( NF.codi_emp = INF.codi_emp  AND NF.codi_tra = INF.codi_tra  AND NF.nume_nfe = INF.nume_nfe  AND NF.seri_nfe = INF.seri_nfe ) 
+       LEFT OUTER JOIN ruralb.igrupoempresa IGRU  ON ( IGRU.codi_emp = NF.codi_emp ) 
+       LEFT OUTER JOIN ruralb.grupoempresa GRU    ON ( GRU.codi_gem = IGRU.codi_gem ) 
+       INNER JOIN ruralb.funcaotoper FT           ON ( FT.codi_top = NF.codi_top AND FT.codi_pto = 102 ) 
+       INNER JOIN ruralb.transac TR               ON ( TR.codi_tra = NF.codi_tra ) 
+       INNER JOIN ruralb.prodserv PD              ON ( PD.codi_psv = INF.codi_psv ) 
+       LEFT JOIN ruralb.grupo GR                  ON ( PD.codi_gpr = GR.codi_gpr ) 
+       LEFT JOIN ruralb.subgrupo SB               ON ( PD.codi_gpr = SB.codi_gpr AND PD.codi_sbg = SB.codi_sbg ) 
+       LEFT JOIN ruralb.condicao CO               ON ( CO.cond_con = NF.cond_con ) 
+       LEFT JOIN ruralb.cliente CL                ON ( CL.codi_tra = TR.codi_tra ) 
+       LEFT JOIN ruralb.municipio MU              ON ( MU.codi_mun = TR.codi_mun ) 
+       LEFT JOIN ruralb.produto PR                ON ( PR.codi_psv = PD.codi_psv ) 
+       LEFT JOIN ruralb.embala EM                 ON ( EM.codi_emb = PR.codi_emb ) 
+       LEFT JOIN ruralb.fornec FAB                ON ( PR.codi_tra = FAB.codi_tra ) 
+       LEFT JOIN ruralb.propried pro              ON ( pro.prop_pro = nf.prop_pro ) 
+       LEFT OUTER JOIN ruralb.vendedorcli VD      ON ( NF.codi_tra = VD.codi_tra AND NF.codi_emp = VD.codi_emp ) 
+       LEFT JOIN ruralb.vendedor VDD              ON ( VDD.codi_pes = NF.cod1_pes ) 
+       LEFT JOIN ruralb.pessoal PS            ON (PS.codi_pes = VDD.codi_pes)
+       LEFT JOIN ruralb.cfo CF                    ON ( CF.ccfo_cfo = NF.ccfo_cfo ) 
+       LEFT JOIN ruralb.tipooper t                ON nf.codi_top = t.codi_top 
+//* incluí este parâmetro para evitar duplicidades na emissão dos relatórios 
+WHERE  NF.codi_emp IN (SELECT EMP.codi_emp 
+                       FROM   ruralb.cademp EMP 
+                       WHERE  EMP.codi_emp = 5 
+                               OR EMP.cmat_emp = 5) 
+       AND PD.codi_gpr IN ( '1', '2', '3', '11000028' ); 
+
+STORE VW_SAIDAS_FATURADAS INTO [lib://0.Extract/Siagri/QLIK_SAIDAS_FATURADAS.qvd](qvd);
+Drop Table VW_SAIDAS_FATURADAS;
+*/
+
+[MUNICIPIO]:
+SELECT 
+	*
+FROM "RURALB"."MUNICIPIO";
+
+STORE MUNICIPIO INTO [LIB://0.Extract/TabMunicipio.qvd](QVD);
+
+DROP TABLE MUNICIPIO;
+
+
+VW_VECTOR_IND_PEDIDO_COMPRA:
+Load
+  EMPRESA,
+     PEDIDO,
+     date(floor(DATA_CRIACAO)) as DATA_CRIACAO,
+     date(floor(DATA_PEDIDO)) as DATA_PEDIDO,
+     COD_GRUPO,
+     DESC_GRUPO,
+     COD_SUBGRUPO,
+     DESC_SUBGRUPO,
+     COD_PARCEIRO,
+     FORNECEDOR,
+     NOTA,
+     SERIE,
+     date(floor(DATA_RECEBIMENTO_NF)) AS DATA_RECEBIMENTO_NF, 
+     DATA_RECEBIMENTO_NF-DATA_CRIACAO AS DIAS_PEDIDO_RECEB, 
+     date(floor(DATA_EMISSAO_NF)) AS DATA_EMISSAO_NF,
+     date(floor(DATA_INSERT_NF)) as DATA_INSERT_NF;
+SQL
+SELECT DISTINCT
+    P.CODI_EMP EMPRESA,
+    P.NUME_PEC PEDIDO,
+    P.DINSERT AS DATA_CRIACAO,
+    P.DATA_PEC AS DATA_PEDIDO,
+    GR.CODI_GPR COD_GRUPO,
+    GR.DESC_GPR DESC_GRUPO,
+    SU.CODI_SBG COD_SUBGRUPO,
+    SU.DESC_SBG DESC_SUBGRUPO,
+    NF.CODI_TRA COD_PARCEIRO,
+    T.RAZA_TRA FORNECEDOR,
+    NF.NUME_NFE NOTA,
+    NF.SERI_NFE SERIE,
+    NF.DREC_NFE AS DATA_RECEBIMENTO_NF,  
+   // NF.DREC_NFE - P.DINSERT 			AS DIAS_PEDIDO_RECEB, 
+    TR.DEMI_NFE AS DATA_EMISSAO_NF,
+    TR.DINSERT AS DATA_INSERT_NF
+FROM RURALB.IPEDCOM IP
+INNER JOIN RURALB.PEDCOM P ON (P.CODI_EMP = IP.CODI_EMP AND P.NUME_PEC = IP.NUME_PEC)
+INNER JOIN RURALB.INFENTRA NF ON (NF.EMPR_PEC = IP.CODI_EMP AND NF.NUME_PEC = IP.NUME_PEC AND NF.CODI_PSV = IP.CODI_PSV)
+INNER JOIN RURALB.PRODSERV PR ON (PR.CODI_PSV = IP.CODI_PSV)
+LEFT OUTER JOIN RURALB.NFENTRA TR ON (TR.CODI_TRA = NF.CODI_TRA AND TR.NUME_NFE = NF.NUME_NFE AND TR.SERI_NFE = NF.SERI_NFE AND TR.CODI_EMP = NF.CODI_EMP)
+LEFT OUTER JOIN RURALB.GRUPO GR ON (GR.CODI_GPR = PR.CODI_GPR)
+LEFT OUTER JOIN RURALB.SUBGRUPO SU ON (SU.CODI_GPR = PR.CODI_GPR AND SU.CODI_SBG = PR.CODI_SBG)
+LEFT OUTER JOIN RURALB.TRANSAC T ON (T.CODI_TRA = NF.CODI_TRA);
+
+ STORE VW_VECTOR_IND_PEDIDO_COMPRA INTO [lib://0.Extract/VW_VECTOR_IND_PEDIDO_COMPRA.qvd](qvd);
+ Drop Table VW_VECTOR_IND_PEDIDO_COMPRA;
+
+PEDIDO:
+select 
+CODI_EMP,
+//PEDI_PED,
+CAST(PEDI_PED AS VARCHAR2(200)) AS PEDI_PED,
+seri_ped,
+PROP_PRO,
+OCOM_PED AS OBS_PEDIDO,
+CODI_TRA
+
+FROM "RURALB"."PEDIDO";
+
+STORE PEDIDO INTO [lib://0.Extract/PEDIDO.qvd](qvd);
+Drop Table PEDIDO;
+
+PROPRIED:
+select * FROM "RURALB"."PROPRIED";
+
+STORE PROPRIED INTO [lib://0.Extract/PROPRIED_PROPRIEDADES.qvd](qvd);
+Drop Table PROPRIED;
+
+TRANSAC:
+select * FROM "RURALB"."TRANSAC";
+
+STORE TRANSAC INTO [lib://0.Extract/TRANSAC.qvd](qvd);
+Drop Table TRANSAC;
+
+
+VW_VECTOR_IND_VENDAS_DEV:
+SELECT * FROM RURALB.VW_VECTOR_IND_VENDAS_DEV
+WHERE TO_DATE (TO_CHAR (DATA_NF, 'DD/MM/YYYY'), 'DD/MM/YYYY') >= TO_DATE('01/01/2018', 'DD/MM/YYYY');
+
+STORE VW_VECTOR_IND_VENDAS_DEV INTO [lib://0.Extract/VW_VECTOR_IND_VENDAS_DEV.qvd](qvd);
+Drop Table VW_VECTOR_IND_VENDAS_DEV;
+
+
+let vDataIni = monthstart(Today());//'01/06/2019'; //
+let vDataFim= MonthEnd(Today());//'30/06/2019';//
+let vArquivo= MonthName(vDataIni);
+
+VW_NOTAS_EMIT_CANCELADAS:
+SELECT 
+REGIONAL, 
+'$(vArquivo)' as DataRef,
+CODI_EMP, 
+CODI_TOP, 
+DESC_TOP, 
+NVL(SUM(EMITIDAS),0)EMITIDAS, 
+NVL(SUM(CANCELADAS),0)CANCELADAS
+FROM (
+SELECT 
+    CASE 
+        WHEN N.CODI_EMP IN (4,5,9,14,32) THEN 'JATAI'
+        WHEN N.CODI_EMP IN (15,16,35,41,43) THEN 'RIO VERDE'
+        WHEN N.CODI_EMP IN (30,31) THEN 'PRIMAVERA DO LESTE'
+        WHEN N.CODI_EMP IN (12,13,20,21,22,23) THEN 'QUERENCIA'
+        WHEN N.CODI_EMP IN (24,25,26,27,28,29) THEN 'CANARANA'
+        WHEN N.CODI_EMP IN (33,37,39) THEN 'PARAGOMINAS'
+        WHEN N.CODI_EMP IN (11,34,40,42) THEN 'REDENCAO'
+        ELSE 'NAO DEFINIDA'
+    END AS REGIONAL, 
+    N.CODI_EMP, N.CODI_TOP, T.DESC_TOP, COUNT(*)EMITIDAS, NULL AS CANCELADAS 
+FROM RURALB.NOTA N, RURALB.TIPOOPER T
+WHERE N.CODI_TOP=T.CODI_TOP
+AND N.SITU_NOT=5
+AND TO_DATE (TO_CHAR (N.DEMI_NOT, 'DD/MM/YYYY'), 'DD/MM/YYYY')>= TO_DATE('$(vDataIni)', 'DD/MM/YYYY') 
+AND TO_DATE (TO_CHAR (N.DEMI_NOT, 'DD/MM/YYYY'), 'DD/MM/YYYY')<= TO_DATE('$(vDataFim)', 'DD/MM/YYYY') 
+
+GROUP BY N.CODI_EMP, N.CODI_TOP, T.DESC_TOP
+UNION ALL
+SELECT 
+    CASE 
+        WHEN N.CODI_EMP IN (4,5,9,14,32) THEN 'JATAI'
+        WHEN N.CODI_EMP IN (15,16,35,41,43) THEN 'RIO VERDE'
+        WHEN N.CODI_EMP IN (30,31) THEN 'PRIMAVERA DO LESTE'
+        WHEN N.CODI_EMP IN (12,13,20,21,22,23) THEN 'QUERENCIA'
+        WHEN N.CODI_EMP IN (24,25,26,27,28,29) THEN 'CANARANA'
+        WHEN N.CODI_EMP IN (33,37,39) THEN 'PARAGOMINAS'
+        WHEN N.CODI_EMP IN (11,34,40,42) THEN 'REDENCAO'
+        ELSE 'NAO DEFINIDA'
+    END AS REGIONAL, 
+N.CODI_EMP, N.CODI_TOP, T.DESC_TOP, NULL AS EMITIDAS, COUNT(*) CANCELADAS 
+FROM RURALB.NOTA N, RURALB.TIPOOPER T
+WHERE N.CODI_TOP=T.CODI_TOP
+AND N.SITU_NOT=9
+AND TO_DATE (TO_CHAR (N.DEMI_NOT, 'DD/MM/YYYY'), 'DD/MM/YYYY')>= TO_DATE('$(vDataIni)', 'DD/MM/YYYY') 
+AND TO_DATE (TO_CHAR (N.DEMI_NOT, 'DD/MM/YYYY'), 'DD/MM/YYYY')<= TO_DATE('$(vDataFim)', 'DD/MM/YYYY') 
+GROUP BY N.CODI_EMP, N.CODI_TOP, T.DESC_TOP
+) GROUP BY REGIONAL, CODI_EMP, CODI_TOP, DESC_TOP;
+// SELECT 
+// '$(vArquivo)' as DataRef,
+// CODI_EMP, 
+// CODI_TOP, 
+// DESC_TOP, 
+// NVL(SUM(EMITIDAS),0)EMITIDAS, 
+// NVL(SUM(CANCELADAS),0)CANCELADAS
+// FROM (
+// SELECT N.CODI_EMP, N.CODI_TOP, T.DESC_TOP, COUNT(*)EMITIDAS, NULL AS CANCELADAS 
+// FROM NOTA N, TIPOOPER T
+// WHERE N.CODI_TOP=T.CODI_TOP
+// AND N.SITU_NOT=5
+// AND TO_DATE (TO_CHAR (N.DEMI_NOT, 'DD/MM/YYYY'), 'DD/MM/YYYY')>= TO_DATE('$(vDataIni)', 'DD/MM/YYYY') 
+// AND TO_DATE (TO_CHAR (N.DEMI_NOT, 'DD/MM/YYYY'), 'DD/MM/YYYY')<= TO_DATE('$(vDataFim)', 'DD/MM/YYYY') 
+
+// GROUP BY N.CODI_EMP, N.CODI_TOP, T.DESC_TOP
+
+// UNION ALL
+
+// SELECT N.CODI_EMP, N.CODI_TOP, T.DESC_TOP, NULL AS EMITIDAS, COUNT(*) CANCELADAS 
+// FROM NOTA N, TIPOOPER T
+// WHERE N.CODI_TOP=T.CODI_TOP
+// AND N.SITU_NOT=9
+
+// AND TO_DATE (TO_CHAR (N.DEMI_NOT, 'DD/MM/YYYY'), 'DD/MM/YYYY')>= TO_DATE('$(vDataIni)', 'DD/MM/YYYY') 
+// AND TO_DATE (TO_CHAR (N.DEMI_NOT, 'DD/MM/YYYY'), 'DD/MM/YYYY')<= TO_DATE('$(vDataFim)', 'DD/MM/YYYY')
+
+// GROUP BY N.CODI_EMP, N.CODI_TOP, T.DESC_TOP
+// ) GROUP BY CODI_EMP, CODI_TOP, DESC_TOP;
+
+STORE VW_NOTAS_EMIT_CANCELADAS INTO [lib://0.Extract/VW_NOTAS_EMIT_CANCELADAS_$(vArquivo).qvd](qvd);
+Drop Table VW_NOTAS_EMIT_CANCELADAS;
+
+///////////////////////////////////////////////
+
+VW_VECTOR_IND_PEDIDOS:
+SELECT * FROM RURALB.VW_VECTOR_IND_PEDIDOS
+WHERE TO_DATE (TO_CHAR (DATA_PEDIDO, 'DD/MM/YYYY'), 'DD/MM/YYYY') >= TO_DATE('01/01/2018', 'DD/MM/YYYY');
+
+STORE VW_VECTOR_IND_PEDIDOS INTO [lib://0.Extract/VW_VECTOR_IND_PEDIDOS.qvd](qvd);
+Drop Table VW_VECTOR_IND_PEDIDOS;
+
+/////////////////////////////////////////////////
+
+VW_VECTOR_IND_CONTRATOS_ALT:
+SELECT * FROM RURALB.VW_VECTOR_IND_CONTRATOS_ALT
+WHERE TO_DATE (TO_CHAR (DATA, 'DD/MM/YYYY'), 'DD/MM/YYYY') >= TO_DATE('01/01/2018', 'DD/MM/YYYY');
+
+STORE VW_VECTOR_IND_CONTRATOS_ALT INTO [lib://0.Extract/VW_VECTOR_IND_CONTRATOS_ALT.qvd](qvd);
+Drop Table VW_VECTOR_IND_CONTRATOS_ALT;
+
+/////////////////////////////////////////////////
+VW_VECTOR_IND_PEDIDOS_BARTER:
+SELECT * FROM RURALB.VW_VECTOR_IND_PEDIDOS_BARTER
+WHERE TO_DATE (TO_CHAR (DATA_PEDIDO, 'DD/MM/YYYY'), 'DD/MM/YYYY') >= TO_DATE('01/01/2018', 'DD/MM/YYYY');
+
+STORE VW_VECTOR_IND_PEDIDOS_BARTER INTO [lib://0.Extract/VW_VECTOR_IND_PEDIDOS_BARTER.qvd](qvd);
+Drop Table VW_VECTOR_IND_PEDIDOS_BARTER;
+
+
+
+/////////////////////////////////////////////////
+
+VW_VECTOR_IND_PEDIDO_PREV_ENTR:
+SELECT * FROM RURALB.VW_VECTOR_IND_PEDIDO_PREV_ENTR
+WHERE TO_DATE (TO_CHAR (DATA_ENTREGA, 'DD/MM/YYYY'), 'DD/MM/YYYY') >= TO_DATE('01/01/2018', 'DD/MM/YYYY');
+
+STORE VW_VECTOR_IND_PEDIDO_PREV_ENTR INTO [lib://0.Extract/VW_VECTOR_IND_PEDIDO_PREV_ENTR.qvd](qvd);
+Drop Table VW_VECTOR_IND_PEDIDO_PREV_ENTR;
+
+TAB_CONSULTOR_CLIENTE:
+SELECT  DISTINCT
+	TRANSAC.RAZA_TRA,
+	CADEMP.IDEN_EMP,
+	PROPRIED.DESC_PRO,
+	PESSOAL.NOME_PES,
+	PROPRIED.PROP_PRO,
+	VENDPROP.CODI_EMP,
+	PESSOAL.CODI_PES
+FROM 
+	RURALB.VENDEDORPROP VENDPROP  
+	LEFT JOIN RURALB.PROPRIED ON (PROPRIED.PROP_PRO = VENDPROP.PROP_PRO)
+	LEFT JOIN RURALB.TRANSAC ON (TRANSAC.CODI_TRA = PROPRIED.CODI_TRA)
+	LEFT JOIN RURALB.CADEMP ON (CADEMP.CODI_EMP = VENDPROP.CODI_EMP)
+	LEFT JOIN RURALB.PESSOAL ON (PESSOAL.CODI_PES = VENDPROP.COD1_PES)
+WHERE
+	PROPRIED.SITU_PRO = 'A'
+	AND PESSOAL.SITU_PES = 'A'
+	AND TRANSAC.SITU_TRA = 'A'
+;
+
+STORE TAB_CONSULTOR_CLIENTE INTO [lib://0.Extract/Siagri/TAB_CONSULTOR_CLIENTE.qvd](qvd);
+Drop Table TAB_CONSULTOR_CLIENTE;

@@ -1,0 +1,25 @@
+///$tab 1 - Carga automatizada.
+$(Must_Include=[LIB://3.Script/ScriptGeral.qvs]);  
+
+//teste de horario para extração de hora em hora, a extração padrao e executada todos os dias as 06:00
+
+Trace 'CargaNormal';
+Tabelas_Raw:
+LOAD
+    Tabela,
+    Diretorio,
+    Conexao,
+    Campos,
+    QvdGerado
+FROM 
+	[$(vDirArquivo)/TI/ConfLoad.xlsx](ooxml, embedded labels, table is Planilha1)
+WHERE
+	Ativo = 'S';
+
+FOR vCount =0 TO NoOfRows('Tabelas_Raw')-1
+	
+	CALL subSelect ('Tabelas_Raw',$(vCount),1);
+
+NEXT;
+
+DROP TABLE Tabelas_Raw;

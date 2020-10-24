@@ -1,0 +1,8 @@
+///$tab 7 - Extract - Qlik
+LIB CONNECT TO 'Qlik';
+
+HistoricoTabelaPreco:
+SELECT * FROM QLIK.VM_TMPTABELAPRECO;
+
+STORE HistoricoTabelaPreco INTO [lib://0.Extract/Migracao/HistoricoTabelaPreco.qvd](qvd);
+Drop Table HistoricoTabelaPreco;

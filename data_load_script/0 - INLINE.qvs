@@ -1,0 +1,32 @@
+///$tab 0 - INLINE
+SituacaoPedido:
+Load * Inline
+[
+SITU_PED, SITU_PEDIDO
+0,NÃO LIBERADO
+1,LIBERADO
+5,CONFIRMADO
+9,CANCELADO 
+];
+STORE SituacaoPedido INTO [lib://0.Extract/TabSituacaoPedido.qvd](qvd);
+Drop Table SituacaoPedido;
+
+
+EstadoPedido:
+Load * Inline [
+ESTA_PED, ESTA_PEDIDO
+0,Nao Liberado Comercial
+1,Liberado Comercial
+2 ,Nao Liberado Financeiro
+3 ,Liberado Financeiro
+4 ,Nao Liberado Assinatura
+5 ,Liberado Assinatura
+6 ,Nao Liberado Logistica
+7 ,Liberado Logistica
+8 ,Venda Perdida Integral
+9 ,Confirmado Integral
+10,Confirmado Parcial
+11,Cancelado
+];
+STORE EstadoPedido INTO [lib://0.Extract/TabEstadoPedido.qvd](qvd);
+Drop Table EstadoPedido;

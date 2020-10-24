@@ -1,0 +1,58 @@
+[
+  {
+    "qInfo": {
+      "qId": "0cd24bdb-8b83-469d-a5cb-36a1b43607bd",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vGeracaoDataCongelamento",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "DATE(DATE#('20200326','YYYYMMDD'))\tAS\tDataCongelamento"
+  },
+  {
+    "qInfo": {
+      "qId": "2e359671-1e12-4306-96ea-73c55e395959",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vMes",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "jul 2019"
+  },
+  {
+    "qInfo": {
+      "qId": "a0a9794e-9d19-4cd4-83c2-fb3e9224d900",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vData",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "11/07/2019"
+  },
+  {
+    "qInfo": {
+      "qId": "acce5c88-9cc9-4b38-b0d5-bbc99b170442",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vDataAutal",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "20200703"
+  }
+]

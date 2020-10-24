@@ -1,0 +1,22 @@
+{
+  "qInfos": [
+    {
+      "qId": "KUCSAb",
+      "qType": "table"
+    },
+    {
+      "qId": "LoadModel",
+      "qType": "LoadModel"
+    },
+    {
+      "qId": "c850d7b2-40a8-4cf9-ba88-85adea999076",
+      "qType": "appprops",
+      "modifiedDate": "2020-10-24T12:54:24.805Z"
+    },
+    {
+      "qId": "dd749c8a-acf7-4686-b5c8-7eb98ab79149",
+      "qType": "sheet",
+      "modifiedDate": "2020-10-24T12:54:24.805Z"
+    }
+  ]
+}

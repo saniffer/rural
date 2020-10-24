@@ -1,0 +1,285 @@
+///$tab 4 - Extract - CRM
+LIB CONNECT TO 'CloverCRM';
+
+PedidosVendasCRM_Integrados:
+SELECT A.IDATENDIMENTO,
+	   IPV.IDPRODUTO,
+       PRO.chaveerp 				   as CODPRODUTO_SIAGRI,
+       PV.IDPEDIDOVENDA,
+       pv.observacao,
+       TP.DOLAR,
+       PV.CODIGO                       AS NUMERO_PEDIDO,
+       F.IDFILIAL,
+       F.chaveerp,
+       LF.DESCRICAO                    AS FILIAL,
+       U.IDUSUARIO                     AS IDVENDEDOR,
+       U.NOME                          AS USUARIO_VENDEDOR,
+       P.NOME                          AS PARCEIRO,
+       P.IDPARCEIRO					   AS IDPARCEIRO,
+       A.DATACADASTRO                  AS DATA_EMISSAO,
+	 //  A.DATAINICIO                    AS DATA_EMISSAO,
+       VENCIMENTO.DATA                 AS DATA_VENCIMENTO_PEDIDO,
+       IPV.CAMPANHA,
+       L.IDLOCAL AS IDLOCALFATURAMENTO,
+       CASE
+            WHEN PV.ATENDIDO = 1
+                 THEN 'ATENDIDO'
+            WHEN PV.PARCIALMENTEATENDIDO = 1
+                 THEN 'PARCIALMENTE ATENDIDO'
+            WHEN PV.BLOQUEADO = 1
+                 THEN 'BLOQUEADO'
+            WHEN PV.APROVADO = 1
+                 THEN 'APROVADO'
+            WHEN PV.CANCELADO = 1
+                 THEN 'CANCELADO'
+            ELSE 'INDEFINIDO'
+       END                             AS STATUS,
+       ''   AS STATUS_ERP,
+       CASE
+            WHEN PV.INTEGRADO = 1
+                 THEN 'INTEGRADO'
+            ELSE 'NÃO INTEGRADO'
+       END                             AS INTEGRADO,
+       CASE
+            WHEN PV.FINALIZADO = 1
+                 THEN 'FINALIZADO'
+            ELSE 'NÃO FINALIZADO'
+       END AS FINALIZADO,
+       L.DESCRICAO                     AS LOCAL_FATURAMENTO,
+       CP.DESCRICAO                    AS CONDICAO_PAGAMENTO,
+       TP.DESCRICAO                    AS TABELA_PRECO,
+       TPN.DESCRICAO                   AS TIPODENEGOCIACAO,
+       CASE
+            WHEN PV.TROCA = 1
+                 THEN 'SIM'
+            ELSE 'NÃO'
+       END PEDIDO_DE_TROCA,
+       S.DESCRICAO                     AS SAFRA,
+       COALESCE(LMCP.VALORLIMITE,0)    AS LIMITE_CREDITO_CLIENTE,
+       COALESCE(LMCP.VALORUTILIZADO,0) AS LMITE_CREDITO_UTILIZADO,
+       C.DESCRICAO                     AS COMMODITY,
+       PVNT.VALORFIXADO                AS VALOR_BRUTO_COMMODITY,
+       PVNT.VALORLIQUIDO               AS VALOR_LIQUIDI_COMMODITY,
+	   IPV.VALORTOTAL,
+	   IPV.MARGEM,
+       IPV.percentualdescontocampanha,
+       IPV.custounitario,
+       IPV.valorunitario,
+       IPV.quantidade,
+       (ipv.custounitario*ipv.quantidade)as CUSTO_TOTAL
+  FROM PEDIDOVENDA PV
+       LEFT  JOIN PEDIDOVENDANEGOCIACAOTROCA      PVNT       ON PVNT.IDPEDIDOVENDA                    = PV.IDPEDIDOVENDA
+       LEFT  JOIN ITEMPEDIDOVENDA                 IPV        ON IPV.IDPEDIDOVENDA                     = PV.IDPEDIDOVENDA
+       LEFT  JOIN PEDIDOVENDAVENCIMENTO           VENCIMENTO ON VENCIMENTO.IDPEDIDOVENDA              = PV.IDPEDIDOVENDA
+       LEFT  JOIN ATENDIMENTO                     A          ON A.IDATENDIMENTO                       = PV.IDATENDIMENTO
+       LEFT  JOIN USUARIO                         U          ON U.IDUSUARIO                           = A.IDUSUARIO
+       LEFT  JOIN FILIAL                          F          ON F.IDFILIAL                            = A.IDFILIAL
+       LEFT  JOIN LOCAL                           LF         ON LF.IDLOCAL                            = F.IDLOCAL
+       LEFT  JOIN PARCEIRO                        P          ON P.IDPARCEIRO                          = A.IDPARCEIRO
+       LEFT  JOIN LIMITECREDITOPARCEIRO           LMCP       ON LMCP.IDPARCEIRO                       = P.IDPARCEIRO
+       LEFT  JOIN LOCAL                           L          ON L.IDLOCAL                             = PV.IDLOCALFATURAMENTO
+       LEFT  JOIN LOCAL                           L2         ON L2.IDLOCAL                            = PV.IDLOCALENTREGA
+       LEFT  JOIN CONDICAODEPAGAMENTO             CP         ON CP.IDCONDICAODEPAGAMENTO              = PV.IDCONDICAODEPAGAMENTO
+       LEFT  JOIN TABELADEPRECO                   TP         ON TP.IDTABELADEPRECO                    = PV.IDTABELADEPRECO
+       LEFT  JOIN TIPONEGOCIACAO                  TPN        ON TPN.IDTIPONEGOCIACAO                  = PV.IDTIPONEGOCIACAO
+       LEFT  JOIN SAFRA                           S          ON S.IDSAFRA                             = PV.IDSAFRA
+       LEFT  JOIN CULTURA                         C          ON C.IDCULTURA                           = S.IDCULTURA
+       LEFT  JOIN PEDIDOVENDABLOQUEIO             PVB        ON PVB.IDPEDIDOVENDA                     = PV.IDPEDIDOVENDA
+       LEFT  JOIN PEDIDOVENDABLOQUEIOAPROVACAO    PVBA       ON PVBA.IDPEDIDOVENDABLOQUEIO            = PVB.IDPEDIDOVENDABLOQUEIO
+       LEFT  JOIN ETAPAPROCESSO                   EP         ON EP.IDETAPAPROCESSO                    = PVBA.IDETAPAPROCESSO
+       LEFT  JOIN USUARIO                         US         ON US.IDUSUARIO                          = PVBA.IDUSUARIO
+       LEFT  JOIN PROCESSO                        PR         ON PR.IDPROCESSO                         = EP.IDPROCESSO
+       LEFT  JOIN MOTIVOAPROVACAOREPROVACAOPEDIDO MOT        ON MOT.IDMOTIVOAPROVACAOREPROVACAOPEDIDO = PVBA.IDMOTIVOAPROVACAOREPROVACAOPEDIDO
+       LEFT JOIN TIPOBLOQUEIOPEDIDOVENDA          TBPV ON TBPV.IDPEDIDOVENDA                          = PV.IDPEDIDOVENDA
+	   LEFT join PRODUTO 						  PRO		 on PRO.IDPRODUTO                         = IPV.idproduto
+WHERE  U.IDUSUARIO NOT IN (-9999998888)
+  // --AND A.DATAINICIO BETWEEN '01/01/2019' AND '20/09/2019'
+ //--AND PR.PROCESSOFAIXADESCONTOGERAL = 1
+   and PV.INTEGRADO = 1
+   and F.IDFILIAL in(4,5,6,7,8,14,18,19,23,25,28,29,30,32,33,35,36,84,83,106,107,39,60,62)
+  //and PV.CODIGO in ('10181PV')
+GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39
+;
+
+STORE PedidosVendasCRM_Integrados INTO [lib://0.Extract/CloverCRM/PedidosVendasCRM_Integrados.qvd](qvd);
+
+
+STORE PedidosVendasCRM_Integrados INTO [lib://0.Extract/CloverCRM/PedidosVendasCRM_Integrados.qvd](qvd);
+Drop Table PedidosVendasCRM_Integrados;
+
+
+TabAprovacoes:
+select 
+pb.idpedidovenda "PEDIDO",
+p.nome "CLIENTE",
+pb.tipobloqueio "TIPO BLOQUEIO",
+pa.situacao ,
+pa.idetapaprocesso,
+ep.descricao,
+ep.ordem,
+u.nome,
+pa.parecer
+from pedidovendabloqueio pb
+left join pedidovendabloqueioaprovacao pa on pb.idpedidovendabloqueio = pa.idpedidovendabloqueio
+left join etapaprocesso ep on ep.idetapaprocesso = pa.idetapaprocesso
+left join pedidovenda pv on pb.idpedidovenda = pv.idpedidovenda
+left join atendimento a on a.idatendimento = pv.idatendimento
+left join parceiro p on p.idparceiro = a.idparceiro
+left join usuario u on u.idusuario = pa.idusuario
+;
+
+STORE TabAprovacoes INTO [lib://0.Extract/CloverCRM/TabAprovacoes.qvd](qvd);
+Drop Table TabAprovacoes;
+
+
+PedidosVendasCRM_EmNegociacao:
+SELECT A.IDATENDIMENTO,
+       PV.IDPEDIDOVENDA,
+       PRO.chaveerp 				   as CODPRODUTO_SIAGRI,
+       PV.CODIGO                       AS NUMERO_PEDIDO,
+       F.IDFILIAL,
+       F.chaveerp,
+       LF.DESCRICAO                    AS FILIAL,
+       U.IDUSUARIO                     AS IDVENDEDOR,
+       U.NOME                          AS USUARIO_VENDEDOR,
+       P.NOME                          AS PARCEIRO,
+       A.DATAINICIO                    AS DATA_EMISSAO,
+       VENCIMENTO.DATA                 AS DATA_VENCIMENTO_PEDIDO,
+       IPV.CAMPANHA,
+       CASE
+            WHEN PV.ATENDIDO = 1
+                 THEN 'ATENDIDO'
+            WHEN PV.PARCIALMENTEATENDIDO = 1
+                 THEN 'PARCIALMENTE ATENDIDO'
+            WHEN PV.BLOQUEADO = 1
+                 THEN 'BLOQUEADO'
+            WHEN PV.APROVADO = 1
+                 THEN 'APROVADO'
+            WHEN PV.CANCELADO = 1
+                 THEN 'CANCELADO'
+            ELSE 'INDEFINIDO'
+       END                             AS STATUS,
+       TBPV.DESCRICAO   AS STATUS_ERP,
+       CASE
+            WHEN PV.INTEGRADO = 1
+                 THEN 'INTEGRADO'
+            ELSE 'NÃO INTEGRADO'
+       END                             AS INTEGRADO,
+       CASE
+            WHEN PV.FINALIZADO = 1
+                 THEN 'FINALIZADO'
+            ELSE 'NÃO FINALIZADO'
+       END AS FINALIZADO,
+       L.DESCRICAO                     AS LOCAL_FATURAMENTO,
+       CP.DESCRICAO                    AS CONDICAO_PAGAMENTO,
+       TP.DESCRICAO                    AS TABELA_PRECO,
+       TPN.DESCRICAO                   AS TIPODENEGOCIACAO,
+       CASE
+            WHEN PV.TROCA = 1
+                 THEN 'SIM'
+            ELSE 'NÃO'
+       END PEDIDO_DE_TROCA,
+       S.DESCRICAO                     AS SAFRA,
+       COALESCE(LMCP.VALORLIMITE,0)    AS LIMITE_CREDITO_CLIENTE,
+       COALESCE(LMCP.VALORUTILIZADO,0) AS LMITE_CREDITO_UTILIZADO,
+       C.DESCRICAO                     AS COMMODITY,
+       PVNT.VALORFIXADO                AS VALOR_BRUTO_COMMODITY,
+       PVNT.VALORLIQUIDO               AS VALOR_LIQUIDI_COMMODITY,
+	   IPV.VALORTOTAL,
+       IPV.percentualdescontocampanha,
+       IPV.custounitario,
+       IPV.quantidade
+  FROM PEDIDOVENDA PV
+       LEFT  JOIN PEDIDOVENDANEGOCIACAOTROCA      PVNT       ON PVNT.IDPEDIDOVENDA                    = PV.IDPEDIDOVENDA
+       LEFT  JOIN CULTURA                         C          ON C.IDCULTURA                           = PVNT.IDCULTURA
+       LEFT  JOIN ITEMPEDIDOVENDA                 IPV        ON IPV.IDPEDIDOVENDA                     = PV.IDPEDIDOVENDA
+       LEFT  JOIN PEDIDOVENDAVENCIMENTO           VENCIMENTO ON VENCIMENTO.IDPEDIDOVENDA              = PV.IDPEDIDOVENDA
+       LEFT  JOIN ATENDIMENTO                     A          ON A.IDATENDIMENTO                       = PV.IDATENDIMENTO
+       LEFT  JOIN USUARIO                         U          ON U.IDUSUARIO                           = A.IDUSUARIO
+       LEFT  JOIN FILIAL                          F          ON F.IDFILIAL                            = A.IDFILIAL
+       LEFT  JOIN LOCAL                           LF         ON LF.IDLOCAL                            = F.IDLOCAL
+       LEFT  JOIN PARCEIRO                        P          ON P.IDPARCEIRO                          = A.IDPARCEIRO
+       LEFT  JOIN LIMITECREDITOPARCEIRO           LMCP       ON LMCP.IDPARCEIRO                       = P.IDPARCEIRO
+       LEFT  JOIN LOCAL                           L          ON L.IDLOCAL                             = PV.IDLOCALFATURAMENTO
+       LEFT  JOIN LOCAL                           L2         ON L2.IDLOCAL                            = PV.IDLOCALENTREGA
+       LEFT  JOIN CONDICAODEPAGAMENTO             CP         ON CP.IDCONDICAODEPAGAMENTO              = PV.IDCONDICAODEPAGAMENTO
+       LEFT  JOIN TABELADEPRECO                   TP         ON TP.IDTABELADEPRECO                    = PV.IDTABELADEPRECO
+       LEFT  JOIN TIPONEGOCIACAO                  TPN        ON TPN.IDTIPONEGOCIACAO                  = PV.IDTIPONEGOCIACAO
+       LEFT  JOIN SAFRA                           S          ON S.IDSAFRA                             = PV.IDSAFRA
+       LEFT  JOIN PEDIDOVENDABLOQUEIO             PVB        ON PVB.IDPEDIDOVENDA                     = PV.IDPEDIDOVENDA
+       LEFT  JOIN PEDIDOVENDABLOQUEIOAPROVACAO    PVBA       ON PVBA.IDPEDIDOVENDABLOQUEIO            = PVB.IDPEDIDOVENDABLOQUEIO
+       LEFT  JOIN ETAPAPROCESSO                   EP         ON EP.IDETAPAPROCESSO                    = PVBA.IDETAPAPROCESSO
+       LEFT  JOIN USUARIO                         US         ON US.IDUSUARIO                          = PVBA.IDUSUARIO
+       LEFT  JOIN PROCESSO                        PR         ON PR.IDPROCESSO                         = EP.IDPROCESSO
+       LEFT  JOIN MOTIVOAPROVACAOREPROVACAOPEDIDO MOT        ON MOT.IDMOTIVOAPROVACAOREPROVACAOPEDIDO = PVBA.IDMOTIVOAPROVACAOREPROVACAOPEDIDO
+       LEFT JOIN TIPOBLOQUEIOPEDIDOVENDA          TBPV ON TBPV.IDPEDIDOVENDA                          = PV.IDPEDIDOVENDA
+	   LEFT join PRODUTO 						  PRO		 on PRO.IDPRODUTO                         = IPV.idproduto
+
+WHERE  U.IDUSUARIO NOT IN (-9999998888)
+  // AND A.DATAINICIO BETWEEN '01/01/2019' AND '20/09/2019'
+   AND PR.PROCESSOFAIXADESCONTOGERAL = 1
+   and PV.INTEGRADO = 0
+   and F.IDFILIAL in(4,5,6,7,8,14,18,19,23,25,28,29,30,32,33,35,36,84,83,106,107,39,60,62)
+GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32
+ORDER BY A.IDATENDIMENTO desc
+;
+
+STORE PedidosVendasCRM_EmNegociacao INTO [lib://0.Extract/CloverCRM/PedidosVendasCRM_EmNegociacao.qvd](qvd);
+Drop Table PedidosVendasCRM_EmNegociacao;
+
+AtendimentoPlanejado:
+select
+distinct
+a.idagenda,
+a.datahorainicio,
+a.datahoraagendamento,
+a.datahorafim,
+a.descricao,
+u.nome,
+l2.descricao "Propriedade",
+l.descricao "Loja",
+a.justificativacancelamento,
+a.realizada,
+a.cancelada,
+l.chaveerp,
+p.nome "parceiro"
+from agenda a
+left join usuario u on a.idusuario = u.idusuario
+left join filial f on a.idfilial = f.idfilial
+left join local l on f.idlocal = l.idlocal
+left join local l2 on a.idlocal = l2.idlocal
+left join parceiro p on p.idparceiro = l2.idparceiro
+;
+
+STORE AtendimentoPlanejado INTO [lib://0.Extract/CloverCRM/AtendimentoPlanejado.qvd](qvd);
+Drop Table AtendimentoPlanejado;
+
+
+
+[segmentacao2]:
+SELECT "idsegmentacao2",
+	"periodo",
+	"idparceiro",
+	"idperfilpotencialeconomico",
+	"idperfilcomportamentocompras",
+	"visitas",
+	"idgrupoempresarial",
+	"idusuario"
+FROM "public"."segmentacao2";
+
+
+STORE segmentacao2 INTO [lib://0.Extract/CloverCRM/segmentacao2.qvd](qvd);
+Drop Table segmentacao2;
+
+
+
+[perfilpotencialeconomico]:
+SELECT "idperfilpotencialeconomico",
+	"descricao",
+	"sigla",
+	"cor"
+FROM "public"."perfilpotencialeconomico";
+
+
+STORE perfilpotencialeconomico INTO [lib://0.Extract/CloverCRM/perfilpotencialeconomico.qvd](qvd);
+Drop Table perfilpotencialeconomico;

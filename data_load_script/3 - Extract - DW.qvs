@@ -1,0 +1,1212 @@
+///$tab 3 - Extract - DW
+LIB CONNECT TO 'DW';
+
+TabReguaCobrança: //17/08/2020
+SELECT
+   REGUACOBRANCAID,
+   CLIENTEERP,
+   CLIENTENOME,
+   FILIALNOME,
+   REGIONALNOME,
+   TIPOCICLODESCRICAO,
+   STATUS,
+   TIPOCICLO,
+   SAFRA,
+   CRA,
+   RENEGOCIACAO,
+   FATURADO,
+   VALORATUALIZADO,
+   VALORPREVISAO,
+   STATUSCOBRANCA,
+   STATUSREGUA,
+   FAIXAREGUA,
+   REGUACOBRANCA,
+   REGUACONFORMIDADE,
+   DATAVENCIMENTO,
+   PLANOACAO,
+   MESANOVENCIMENTO,
+   TRANSACAOID,
+   DATAATUALIZACAO,
+   VENCIDO,
+   INSTRUMENTOPAGAMENTO,
+   DATAPREVISAO 
+FROM
+   VW_BI_REGUACOBRANCA 
+WHERE
+   VALORATUALIZADO > 0;
+Store TabReguaCobrança INTO [lib://0.Extract/Migracao/TabReguaCobrança.qvd](qvd);
+Drop Table TabReguaCobrança;   
+
+
+TabPrevisaoCurvaInadimplencia:
+SELECT
+   DATAVENCIMENTO,
+   DATAFECHAMENTO,
+   PERIODOID,
+   PERIODONOME,
+   UNIDADEID,
+   FILIALNOME,
+   REGIONALNOME,
+   DATAATUALIZACAO,
+   TIPOFINANCIAMENTOID,
+   TIPOFINANCIAMENTO,
+   GRUPOCONDICACAOPAGAMENTO,
+   INDEXADORNOME,
+   VALORATUALIZADO 
+FROM
+   VW_BI_INADIMPLENCIAPREVISTO;
+
+Store TabPrevisaoCurvaInadimplencia INTO [lib://0.Extract/Migracao/TabPrevisaoCurvaInadimplencia.qvd](qvd);
+Drop Table TabPrevisaoCurvaInadimplencia;
+
+
+TabCurvaInadimplencia:
+SELECT
+   DATAVENCIMENTO,
+   DATAFECHAMENTO,
+   PERIODOID,
+   PERIODONOME,
+   UNIDADEID,
+   FILIALNOME,
+   REGIONALNOME,
+   VALORATUALIZADO,
+   DATAATUALIZACAO,
+   TIPOFINANCIAMENTOID,
+   TIPOFINANCIAMENTO,
+   GRUPOCONDICACAOPAGAMENTO,
+   TIPO,
+   INDEXADORNOME 
+FROM
+   VW_BI_INADIMPLENCIA;
+
+Store TabCurvaInadimplencia INTO [lib://0.Extract/Migracao/TabCurvaInadimplencia.qvd](qvd);
+Drop Table TabCurvaInadimplencia;
+
+
+TabContasReceber:
+SELECT
+   CON.CLIENTEERP AS "01.Codigo Cliente",
+   CON.CLIENTENOME AS "02.Nome Cliente",
+   REG.REGIONALNOME AS "03.Regional Nome",
+   UNIDADEERP AS "04.Código Unidade",
+   FIL2.FILIALNOME AS "05.Nome Unidade",
+   CICLOERP AS "06.Código Ciclo",
+   CICLONOME AS "07.Descrição Ciclo",
+   VENDEDORERP AS "08.Código Vendedor",
+   VENDEDORNOME AS "09.Nome Vendedor",
+   DATAVENCIMENTO AS "10.Data Vencimento",
+   TIPODOCUMENTOERP AS "11.Cód Tipo Documento",
+   TIPODOCUMENTONOME AS "12.Desc Tipo Documento",
+   TIPOCOBRANCAERP AS "13.Cód Tipo Cobrança",
+   TIPOCOBRANCANOME AS "14.Desc Tipo Cobrança",
+   CON.CONDICAOPAGAMENTOERP AS "15.Cód Cond.Pagamento",
+   CON.CONDICAOPAGAMENTONOME AS "16.Desc Cond.Pagamento",
+   NUMERODOCUMENTO AS "17.Numero Documento",
+   DATAMOVIMENTO AS "18.Data Movimento",
+   SERIEDOCUMENTO AS "19.Serie Documento",
+   NUMEROPARCELAS AS "20.Numero Parcela",
+   VALORDOCUMENTO AS "21.Valor Documento",
+   VALORECEBIDO AS "22.Valor Recebido",
+   VALORABERTO AS "23.Valor Aberto",
+   INDEXADORERP AS "24.Indexador",
+   INDEXADORDATA AS "25.Data Indexador",
+   VALORINDEXADOR AS "26.Valor Indexador",
+   VALORATUALIZADO AS "27.Valor Atualizado",
+   ABS(TRUNC(DATAVENCIMENTO) - TRUNC(SYSDATE)) AS "28.Dias Em Atrazo",
+   CASE
+      WHEN
+         TRUNC(DATAVENCIMENTO) - TRUNC(SYSDATE) < 0 
+      THEN
+         'Atrazado' 
+      ELSE
+         'Atual' 
+   END
+   AS "29.Status I", PP.PRAZOPAGAMENTONOME AS "30.Status II", P2.PRAZOPAGAMENTONOME as "31.Status III", P3.PRAZOPAGAMENTONOME AS "32.Statis IV", FIL2.UF AS "33.UF", NVL(CPA2.CONDICAOPAGAMENTONOME, CON.CONDICAOPAGAMENTONOME) AS "34.Condicao Pagamento II", NVL(CATEGORIACLIENTENOME, 'Sem Classificação') AS "35.Cliente Categoria", 
+   CON.DATAATUALIZACAO AS "44.Data Atualização" 
+FROM
+   VW_BI_CONTASRECEBER CON 
+   LEFT JOIN
+      DIMPRAZOPAGAMENTO PP 
+      ON ABS((TRUNC(DATAVENCIMENTO)) - TRUNC(SYSDATE)) BETWEEN PP.PRAZOPAGAMENTOMINIMO AND PP.PRAZOPAGAMENTOMAXIMO 
+   LEFT JOIN
+      DIMPRAZOPAGAMENTO P2 
+      ON P2.PRAZOPAGAMENTOID = PP.PRAZOPAGAMENTOSUPERIORID 
+   LEFT JOIN
+      DIMPRAZOPAGAMENTO P3 
+      ON P3.PRAZOPAGAMENTOID = P2.PRAZOPAGAMENTOSUPERIORID 
+   INNER JOIN
+      DIMFILIAL FIL 
+      ON FIL.FILIALERP = CON.UNIDADEERP 
+   INNER JOIN
+      DIMFILIAL FIL2 
+      ON FIL2.FILIALID = FIL.FILIALSUPERIORID 
+   INNER JOIN
+      DIMREGIONAL REG 
+      ON REG.REGIONALID = FIL2.REGIONALID 
+   LEFT JOIN
+      DIMCONDICAOPAGAMENTO CPA 
+      ON (CPA.CONDICAOPAGAMENTOERP = CON.CONDICAOPAGAMENTOERP) 
+   LEFT JOIN
+      DIMCONDICAOPAGAMENTO CPA2 
+      ON (CPA2.CONDICAOPAGAMENTOID = CPA.CONDICAOPAGAMENTOSUPERIORID) 
+WHERE
+   VALORATUALIZADO <> 0;
+Store TabContasReceber INTO [lib://0.Extract/Migracao/TabContasReceber.qvd](qvd);
+Drop Table TabContasReceber;
+
+TabBaseCobrança:
+SELECT
+   CLIENTEERP AS "01.Codigo Cliente",
+   CLIENTENOME AS "02.Nome Cliente",
+   REGIONALNOME AS "03.Regional Nome",
+   UNIDADEERP AS "04.Código Unidade",
+   FILIALNOME AS "05.Nome Unidade",
+   TIPOCICLODESCRICAO AS "06.Tipo Ciclo",
+   STATUS AS "07.Status",
+   DATAVENCIMENTO AS "08.Data Vencimento",
+   CRA AS "09.CRA Valor",
+   RENEGOCIACAO AS "10.Renegociacao Valor",
+   FATURADO AS "11.Faturado",
+   VALORATUALIZADO AS "12.Valor Atualizado",
+   DATAATUALIZACAO AS "13.Data Atualização",
+   CATEGORIACLIENTENOME AS "14.Categoria Cliente" 
+FROM
+   VW_BI_BASEREGUACOBRANCA;
+   
+Store TabBaseCobrança INTO [lib://0.Extract/Migracao/TabBaseCobrança.qvd](qvd);
+Drop Table TabBaseCobrança;
+
+
+VW_BI_ReceitaSemanal:
+SELECT
+	FATURAID,
+    NUMEROFATURA,
+    ITEMFATURA,
+    SERIEFATURAMENTO,
+    TIPOFATURA,
+    DESCRICAOFATURA,
+    CLIENTEERP,
+    NOMECLIENTE,
+    VINCULOERP,
+    NOMEVINCULO,
+    FILIALERP,
+    REPFILIALERP,
+    NOMEREPRESENTANTE,
+    DTEMISSAO,
+    ORDEMVENDA,
+    ITEMORDEM,
+    MATERIALERP,
+    MARCAERP,
+    DESCRICAOMATERIAL,
+    GRUPOPRODUTOERP,
+    DESCRICAOGRUPO,
+    SUBGRUPOERP,
+    DESCRICAOSUBGRUPO,
+    CICLOERP,
+    DESCRICAOCICLO,
+    CFOP,
+    NFE,
+    DOCUMENTO,
+    SITUACAONFE,
+    DESCRICAOSITUACAONFE,
+    UNIDADECOMERCIAL,
+    QUANTIDADE,
+    VALORLIQUIDO,
+    CUSTOMEDIO,
+    VALORACRESCIMO,
+    CUSTOTABELA,
+    VALORICMS,
+    PRECOVENDA,
+    INDEXADORERP,
+    DATAINDEXADOR,
+    VALORINDEXADOR,
+    MUNPAIERP,
+    MUNICIPIOERP,
+    UFERP,
+    CLIENTEID,
+    PRODUTOID,
+    INDEXADORID,
+    REGIONALID,
+    FILIALID,
+    REPRESENTANTEID,
+    MARCAID,
+    CFOPID,
+    DESCRICAOFILIAL,
+    NOMEMUNICIPIO,
+    DATAATUALIZACAO,
+    REPRESENTANTEERP,
+    TIPOCFOPDESCRICAO,
+    REGIONALNOME,
+    FILIALGERENCIAL,
+    GRUPOPRODUTOID,
+    GRUPOPRODUTONOME,
+    SUBGRUPOID,
+    SUBGRUPONOME,
+    TIPO,
+    PERIODO
+FROM VW_BI_RECEITASEMANAL;
+
+Store VW_BI_ReceitaSemanal INTO [lib://0.Extract/Migracao/VW_BI_ReceitaSemanal.qvd](qvd);
+
+Drop Table VW_BI_ReceitaSemanal;
+
+TabelaPreco:
+SELECT * FROM VW_BI_TABELAPRECO;
+
+STORE TabelaPreco INTO [lib://0.Extract/Migracao/TabelaPreco.qvd](qvd);
+Drop Table TabelaPreco;
+
+PlanoMetasBayer:
+SELECT * FROM RURALDW.VW_BI_PLANOMETASBAYER;
+
+STORE PlanoMetasBayer INTO [lib://0.Extract/Migracao/PlanoMetasBayer.qvd](qvd);
+Drop Table PlanoMetasBayer;
+
+BaseVendido:
+Select * From ruraldw.vw_basevendido;
+STORE BaseVendido INTO [lib://0.Extract/BaseVendido/BaseVendido.qvd](qvd);
+Drop Table BaseVendido;
+
+FATORCAMENTO:
+ SELECT NULL AS FATURAID,
+       NULL AS NUMEROFATURA,
+       NULL AS ITEMFATURA,
+       NULL AS SERIEFATURAMENTO,
+       NULL AS TIPOFATURA,
+       NULL AS DESCRICAOFATURA,
+       NULL AS CLIENTEERP,
+       NULL AS NOMECLIENTE,
+       NULL AS VINCULOERP,
+       NULL AS NOMEVINCULO,
+       CODIGOLOJA AS FILIALERP,
+       NULL AS REPFILIALERP,
+       NULL AS NOMEREPRESENTANTE,
+       TEM.DATACOMPLETA AS DTEMISSAO,
+       NULL AS ORDEMVENDA,
+       NULL AS ITEMORDEM,
+       NULL AS MATERIALERP,
+       NULL AS MARCAERP,
+       NULL AS DESCRICAOMATERIAL,
+       CODIGOGRUPO AS GRUPOPRODUTOERP,
+       GRUPO AS DESCRICAOGRUPO,
+       CODIGOSUBGRUPO AS SUBGRUPOERP,
+       SUBGRUPO AS DESCRICAOSUBGRUPO,
+       NULL AS CICLOERP,
+       NULL AS DESCRICAOCICLO,
+       NULL AS CFOP,
+       NULL AS NFE,
+       NULL AS DOCUMENTO,
+       NULL AS SITUACAONFE,
+       NULL AS DESCRICAOSITUACAONFE,
+       NULL AS UNIDADECOMERCIAL,
+       1 AS QUANTIDADE,
+       RECEITA,
+       ROUND((RECEITA/CAST(TO_CHAR(ADD_MONTHS(TRUNC(SYSDATE-1,'MM'),1) - 1,'DD') AS NUMBER(10))),4) AS VALORLIQUIDO,
+       CUSTOMEDIO AS CUSTOMEDIO,
+       NULL AS VALORACRESCIMO,
+       NULL AS CUSTOTABELA,
+       NULL AS VALORICMS,
+       NULL AS PRECOVENDA,
+       NULL AS INDEXADORERP,
+       NULL AS DATAINDEXADOR,
+       NULL AS VALORINDEXADOR,
+       NULL AS MUNPAIERP,
+       NULL AS MUNICIPIOERP,
+       NULL AS UFERP,
+       NULL AS CLIENTEID,
+       NULL AS PRODUTOID,
+       NULL AS INDEXADORID,
+       NULL AS REGIONALID,
+       NULL AS FILIALID,
+       NULL AS REPRESENTANTEID,
+       NULL AS MARCAID,
+       NULL AS CFOPID,
+       LOJA AS DESCRICAOFILIAL,
+       NULL AS NOMEMUNICIPIO,
+       '03/04/2019' AS DATAATUALIZACAO,
+       ORC.DATAREFERENCIA,
+       NULL AS REPRESENTANTEERP,
+       NULL AS TIPOCFOPDESCRICAO,
+       REG.REGIONALNOME,
+       FIL.FILIALERP AS FILIALGERENCIAL,
+       MAT2.PRODUTOID AS GRUPOPRODUTOID,
+       MAT2.MATERIALNOME AS GRUPOPRODUTONOME,
+       MAT1.PRODUTOID AS SUBGRUPOID,
+       MAT1.MATERIALNOME AS SUBGRUPONOME,
+       'Orçamento' AS TIPO,
+       'Atual' AS PERIODO,
+       FIL2.FILIALNOME,
+       DIR.DIRETORIANOME AS DIRETORIANOME
+ FROM FATORCAMENTO ORC INNER JOIN
+      VW_DW_TEMPO TEM ON TEM.ANOCALENDARIO = TO_CHAR(ORC.DATAREFERENCIA,'YYYY') AND
+                         TEM.NUMEROMESDOANO = TO_CHAR(ORC.DATAREFERENCIA,'MM')  LEFT JOIN
+      DIMFILIAL FIL ON FIL.FILIALERP = ORC.CODIGOLOJA LEFT JOIN
+      DIMFILIAL FIL2 ON (FIL2.FILIALID = FIL.FILIALSUPERIORID) LEFT JOIN
+      DIMREGIONAL REG ON (REG.REGIONALID = FIL2.REGIONALID)  LEFT JOIN
+      DIMDIRETORIA DIR ON (DIR.DIRETORIAID = REG.DIRETORIAID) LEFT JOIN
+      DIMMATERIAL MAT1 ON (MAT1.MATERIALERP = ORC.CODIGOSUBGRUPO AND MAT1.MATERIALSUPERIORERP = ORC.CODIGOGRUPO) LEFT JOIN
+      DIMMATERIAL MAT2 ON (MAT2.PRODUTOID = MAT1.PRODUTOSUPERIORID)
+WHERE //ORC.DATAREFERENCIA >= TO_DATE('01/01/2019', 'DD/MM/YYYY')//YEAR(ORC.DATAREFERENCIA) = YEAR(TODAY())
+   NVL(RECEITA,0)<>0;
+  
+STORE FATORCAMENTO INTO [lib://0.Extract/FATORCAMENTO.qvd](qvd);
+Drop Table FATORCAMENTO;
+
+VW_BI_MARGEMSEMANAL:
+  SELECT
+  		PED.PROPRIEDADEDESCRICAO,
+  		PED.FORNECEDORNOME,
+        PED.TABELANOME,
+        'Pedido Venda' AS DESCRICAOTIPOPEDIDO,
+       TIPO AS TIPO,
+       PED.DATAATUALIZACAO,
+       NVL(PED.DATAVENCIMENTO,PED.DATAEMISSAO) AS DATAVENCIMENTO,
+       PED.CICLONOME,
+       CAST(PED.UNIDADEERP AS VARCHAR2(200)) AS UNIDADEERP,
+       PED.VENDEDORNOME,
+       FIL2.FILIALNOME,
+       REG.REGIONALNOME,
+       DIR.DIRETORIANOME,
+       CAST(PED.NUMEROPEDIDO AS VARCHAR2(200)) AS NUMEROPEDIDO,
+       PED.NUMEROPEDIDOORIGEM ,
+       PED.SERIE AS SERIEPEDIDO,
+       CAST(PED.CLIENTEERP AS VARCHAR2(200)) AS CLIENTEERP,
+       PED.CLIENTENOME,
+       PED.DATAEMISSAO,
+       PEDI.SITU_PED,
+       PEDI.ESTA_PED,
+       PED.PRODUTOERP,
+       PED.PRODUTONOME,
+       PRO.MARC_PRO MARCA,
+       PED.GRUPONOME,
+       PED.SUBGRUPONOME,
+       GRUP.PRODUTOID AS GRUPOPRODUTOID,
+       GRUP.MATERIALNOME AS GRUPOPRODUTONOME,
+       SUBG.PRODUTOID AS SUBGRUPOID,
+       SUBG.MATERIALNOME AS SUBGRUPOPRODUTONOME,
+       PED.VALORUNITARIO,
+       PED.CUSTOTABELA,
+       QUANTIDADE AS QUANTIDADETOTAL,
+       NVL(QUANTIDADEDESFAZIMENTO,0) AS QUANTIDADEDESFAZIMENTO,
+       NVL(QUANTIDADEPERDIDA,0) AS QUANTIDADEPERDIDA,
+       (QUANTIDADE - NVL(QUANTIDADEPERDIDA,0) - NVL(QUANTIDADEDESFAZIMENTO,0)) AS QUANTIDADE,
+      (QUANTIDADE - NVL(QUANTIDADEPERDIDA,0) - NVL(QUANTIDADEDESFAZIMENTO,0)) * PED.CUSTOTABELA AS CMV,
+       (QUANTIDADE - NVL(QUANTIDADEPERDIDA,0) - NVL(QUANTIDADEDESFAZIMENTO,0)) * PED.VALORUNITARIO AS RECEITA,
+       CASE WHEN NVL(PED.DATAVENCIMENTO,PED.DATAEMISSAO) - PED.DATAEMISSAO > 30 THEN 'Á Prazo'
+            ELSE 'A Vista' END AS TIPOPRAZO
+  FROM FATPEDIDOVENDA PED LEFT JOIN
+       DIMMATERIAL SUBG ON (SUBG.MATERIALERP = PED.SUBGRUPOERP AND SUBG.MATERIALSUPERIORERP = PED.GRUPOERP) LEFT JOIN
+       DIMMATERIAL GRUP ON (GRUP.PRODUTOID = SUBG.PRODUTOSUPERIORID) LEFT JOIN       
+       DIMFILIAL FIL1 ON (FIL1.FILIALERP = PED.UNIDADEERP AND FIL1.FILIALNIVELID = 2) LEFT JOIN
+       DIMFILIAL FIL2 ON (FIL2.FILIALID = FIL1.FILIALSUPERIORID) LEFT JOIN
+       DIMREGIONAL REG ON (REG.REGIONALID = FIL2.REGIONALID) LEFT JOIN
+       DIMDIRETORIA DIR ON (DIR.DIRETORIAID = REG.DIRETORIAID) LEFT JOIN
+       RURALB.PRODUTO PRO ON (PRO.CODI_PSV = '0' || PED.PRODUTOERP) LEFT JOIN
+       RURALB.PEDIDO PEDI ON (PEDI.PEDI_PED = PED.NUMEROPEDIDO AND  PEDI.CODI_EMP = PED.UNIDADEERP AND PEDI.SERI_PED = PED.SERIE)
+ WHERE TIPO = 'PV'
+UNION ALL
+SELECT
+		PEDV.PROPRIEDADEDESCRICAO,
+	  	PEDV.FORNECEDORNOME,
+        PEDV.TABELANOME,
+        'Pedido Saldo' AS DESCRICAOTIPOPEDIDO,
+       'PS' as TIPO,
+       PEDV.DATAATUALIZACAO,
+       NVL(PEDV.DATAVENCIMENTO,PEDV.DATAEMISSAO) AS DATAVENCIMENTO,
+       PEDV.CICLONOME,
+       CAST(PEDV.UNIDADEERP AS VARCHAR2(200)) AS UNIDADEERP,
+       PEDV.VENDEDORNOME,
+       FIL2.FILIALNOME,
+       REG.REGIONALNOME,
+       DIR.DIRETORIANOME,
+       CAST(PEDV.NUMEROPEDIDO AS VARCHAR2(200)) AS NUMEROPEDIDO,
+       PEDV.NUMEROPEDIDOORIGEM ,
+       PEDV.SERIE AS SERIEPEDIDO,
+       CAST(PEDV.CLIENTEERP AS VARCHAR2(200)) AS CLIENTEERP,
+       PEDV.CLIENTENOME,
+       PEDV.DATAEMISSAO,
+       PEDI.SITU_PED,
+       PEDI.ESTA_PED,
+       PEDV.PRODUTOERP,
+       PEDV.PRODUTONOME,
+       PRO.MARC_PRO MARCA,
+       PEDV.GRUPONOME,
+       PEDV.SUBGRUPONOME,
+       GRUP.PRODUTOID AS GRUPOPRODUTOID,
+       GRUP.MATERIALNOME AS GRUPOPRODUTONOME,
+       SUBG.PRODUTOID AS SUBGRUPOID,
+       SUBG.MATERIALNOME AS SUBGRUPOPRODUTONOME,
+       PEDV.VALORUNITARIO,
+       PEDV.CUSTOTABELA,
+       QUANTIDADE AS QUANTIDADETOTAL,
+       NVL(QUANTIDADEDESFAZIMENTO,0) AS QUANTIDADEDESFAZIMENTO,
+       NVL(QUANTIDADEPERDIDA,0) AS QUANTIDADEPERDIDA,
+       PEDV.SALDO AS QUANTIDADE,
+       PEDV.SALDO * PEDV.CUSTOTABELA AS CMV,
+       PEDV.SALDO * PEDV.VALORUNITARIO AS RECEITA,
+       CASE WHEN NVL(PEDV.DATAVENCIMENTO,PEDV.DATAEMISSAO) - PEDV.DATAEMISSAO > 30 THEN 'Á Prazo'
+            ELSE 'A Vista' END AS TIPOPRAZO
+  FROM FATPEDIDOVENDA PEDV LEFT JOIN
+       DIMMATERIAL SUBG ON (SUBG.MATERIALERP = PEDV.SUBGRUPOERP AND SUBG.MATERIALSUPERIORERP = PEDV.GRUPOERP) LEFT JOIN
+       DIMMATERIAL GRUP ON (GRUP.PRODUTOID = SUBG.PRODUTOSUPERIORID) LEFT JOIN
+       DIMFILIAL FIL1 ON (FIL1.FILIALERP = PEDV.UNIDADEERP AND FIL1.FILIALNIVELID = 2) LEFT JOIN
+       DIMFILIAL FIL2 ON (FIL2.FILIALID = FIL1.FILIALSUPERIORID) LEFT JOIN
+       DIMREGIONAL REG ON (REG.REGIONALID = FIL2.REGIONALID) LEFT JOIN
+       DIMDIRETORIA DIR ON (DIR.DIRETORIAID = REG.DIRETORIAID) LEFT JOIN
+       RURALB.PRODUTO PRO ON (PRO.CODI_PSV = '0' || PEDV.PRODUTOERP) LEFT JOIN
+       RURALB.PEDIDO PEDI ON (PEDI.PEDI_PED = PEDV.NUMEROPEDIDO AND PEDI.CODI_EMP = PEDV.UNIDADEERP AND PEDI.SERI_PED = PEDV.SERIE)
+ WHERE TIPO = 'PV'
+   AND PEDV.SALDO + PEDV.VALORSALDO <> 0;
+   
+/*
+WHERE 
+         	TO_DATE (TO_CHAR (DATAEMISSAO, 'DD/MM/YYYY'), 'DD/MM/YYYY') >= TO_DATE('01/01/2019', 'DD/MM/YYYY')
+*/
+;
+
+
+STORE VW_BI_MARGEMSEMANAL INTO [lib://0.Extract/VW_BI_MARGEMSEMANAL.qvd](qvd);
+Drop Tables  VW_BI_MARGEMSEMANAL;
+
+
+
+[VW_QLIK_VENDAS_ONLINE6]:
+SELECT *
+FROM "RURALDW"."VW_QLIK_VENDAS_ONLINE6";
+
+STORE VW_QLIK_VENDAS_ONLINE6 INTO [lib://0.Extract/VW_QLIK_VENDAS_ONLINE6.qvd](qvd);
+Drop Table VW_QLIK_VENDAS_ONLINE6;
+
+
+
+
+[DW_TRANSAC]:
+select *
+from RURALB.TRANSAC TR;
+
+STORE DW_TRANSAC INTO [lib://0.Extract/DW_TRANSAC.qvd](qvd);
+Drop Table DW_TRANSAC;
+
+[DW_CLIENTE]:
+select *
+from  RURALB.cliente ;
+
+STORE DW_CLIENTE INTO [lib://0.Extract/DW_CLIENTE.qvd](qvd);
+Drop Table DW_CLIENTE;
+
+[DW_categcli]:
+select *
+from RURALB.categcli ;
+
+STORE DW_categcli INTO [lib://0.Extract/DW_categcli.qvd](qvd);
+Drop Table DW_categcli;
+
+
+
+
+
+
+
+VW_BI_MARGEMSEMANAL_RESUMO:
+SELECT NUMEROPEDIDO,
+	   UNIDADEERP,
+       DATAEMISSAO,
+       CLIENTEERP,
+       DESCRICAOTIPOPEDIDO,
+       DIRETORIANOME,
+       REGIONALNOME,
+       FILIALNOME,
+       MARCA,
+       GRUPOPRODUTONOME,
+       SUBGRUPOPRODUTONOME,
+       CICLONOME,
+       RECEITA,
+       CMV,
+       MARGEM,
+       ROUND(MARGEMPERCENTUAL,4) AS MARGEMPERCENTUAL,
+       CASE WHEN MARGEMPERCENTUAL < 0 THEN '<0%'
+            WHEN MARGEMPERCENTUAL < 0.05 THEN '0% a 5%'
+            WHEN MARGEMPERCENTUAL < 0.10 THEN '5% a 10%'
+            ELSE '>10' END AS RANGEMARGEM
+  FROM (SELECT MS.NUMEROPEDIDO,
+               MS.UNIDADEERP,
+               DATAEMISSAO,
+               MS.CLIENTEERP,
+               MS.DESCRICAOTIPOPEDIDO,
+               MS.DIRETORIANOME,
+               MS.REGIONALNOME,
+               MS.FILIALNOME,
+               MS.MARCA,
+               MS.GRUPOPRODUTONOME,
+               MS.SUBGRUPOPRODUTONOME,
+               MS.CICLONOME,
+               SUM(MS.RECEITA) AS RECEITA,
+               SUM(MS.CMV) AS CMV,
+               CASE WHEN SUM(MS.RECEITA) <> 0 THEN
+               (((SUM(MS.RECEITA) - SUM(MS.CMV))/SUM(MS.RECEITA)) * SUM(MS.RECEITA)) ELSE 0 END AS MARGEM,
+               CASE WHEN SUM(MS.RECEITA) <> 0 THEN
+                   (((SUM(MS.RECEITA) - SUM(MS.CMV))/SUM(MS.RECEITA)) * SUM(MS.RECEITA)) / SUM(MS.RECEITA) ELSE 0 END AS MARGEMPERCENTUAL
+          FROM VW_QLICK_MARGEMSEMANAL MS
+         WHERE 
+         	TO_DATE (TO_CHAR (DATAEMISSAO, 'DD/MM/YYYY'), 'DD/MM/YYYY') >= TO_DATE('01/01/2019', 'DD/MM/YYYY')
+         //DATAEMISSAO >= '01/01/2019'
+       GROUP BY  MS.NUMEROPEDIDO,
+                 MS.UNIDADEERP,
+                 DATAEMISSAO,
+                 MS.CLIENTEERP,
+                 MS.DESCRICAOTIPOPEDIDO,
+                 MS.DIRETORIANOME,
+                 MS.REGIONALNOME,
+                 MS.FILIALNOME,
+                 MS.MARCA,
+                 MS.GRUPOPRODUTONOME,
+                 MS.SUBGRUPOPRODUTONOME,
+                 CICLONOME);
+STORE VW_BI_MARGEMSEMANAL_RESUMO INTO [lib://0.Extract/VW_BI_MARGEMSEMANAL_RESUMO.qvd](qvd);
+Drop Table VW_BI_MARGEMSEMANAL_RESUMO;
+/////////////////////////
+
+
+VW_BI_ESTOQUE:
+LOAD * ;
+SELECT * FROM "RURALDW"."VW_QLIK_ESTOQUE";
+STORE VW_BI_ESTOQUE INTO [lib://0.Extract/VW_BI_ESTOQUE.qvd](qvd);
+Drop Table VW_BI_ESTOQUE;
+
+//VIEW fornecida pelo Felipe, a view anterior de estoque estava com valores errados.
+TB_ESTOQUE_POSICAO:
+SELECT *
+FROM "RURALDW"."VW_BI_BASEESTOQUE" "VW_BI_ESTOQUE";
+STORE TB_ESTOQUE_POSICAO INTO [lib://0.Extract/TB_ESTOQUE_POSICAO.qvd](qvd);
+Drop Table TB_ESTOQUE_POSICAO;
+
+VW_PEDIDOVENDA:
+LOAD * ;
+SELECT * FROM "RURALDW"."VW_PEDIDOVENDA";
+STORE VW_PEDIDOVENDA INTO [lib://0.Extract/VW_PEDIDOVENDA.qvd](qvd);
+Drop Table VW_PEDIDOVENDA;
+
+FATPEDIDOCOMPRAS:
+LOAD * ;
+SELECT * FROM "RURALDW"."FATPEDIDOCOMPRAS";
+STORE FATPEDIDOCOMPRAS INTO [lib://0.Extract/FATPEDIDOCOMPRAS.qvd](qvd);
+Drop Table FATPEDIDOCOMPRAS;
+
+Lote:
+SELECT * FROM RURALDW.VW_LOTES_SALDO_LOTES;
+STORE Lote INTO [lib://0.Extract/LoteSaldo.qvd](qvd);
+Drop Table Lote;
+
+
+//inicio Extrações DW para projeto Monitoramento Diretoria//
+Carteira_Pedido_Venda_DW:
+SELECT 
+STATUSPEDIDO 			AS "Status Pedido",        
+NUMEROPEDIDO 			AS "Numero Pedido",        
+DATAEMISSAO 			AS "Data Emissão",        
+CICLOERP 				AS "Código Ciclo",        
+CICLONOME 				AS "Ciclo Nome",        
+GRUPOERP 				AS "Código Grupo",        
+GRUPONOME 				AS "Grupo Nome",        
+SUBGRUPOERP 			AS "Código SubGrupo",        
+SUBGRUPONOME 			AS "SubGrupoNome",        
+GRUPOPRODUTOGERENCIAL 	AS "Grupo Gerencial",        
+SUBGRUPOGERENCIAL 		AS "SubGrupo Gerencial",        
+VENDEDOREMP 			AS "Código Unidade Vendedor",        
+VENDEDORERP 			AS "Código Vendedor",        
+VENDEDORNOME 			AS "Nome Vendedor",        
+UNIDADEERP 				AS "Código Unidade",        
+NOMEUNIDADE 			AS "Unidade Nome",        
+REGIONALNOME 			AS "Regional",        
+CLIENTEERP 				AS "Código Cliente",        
+CLIENTENOME 			AS "Cliente Nome",        
+CLIENTEVINCULOERP 		AS "Código Vinculo Cliente",        
+CLIENTEVINCULONOME 		AS "Vinculo Cliente Nome",        
+ENDERECOCLIENTE 		AS "Endereço Cliente",        
+MUNICIPIOCLIENTE 		AS "Municipio Cliente",        
+UFCLIENTE 				AS "UF Cliente",        
+PROPRIEDADEDESCRICAO 	AS "Propriedade Cliente",        
+PROPRIEDADEENDERECO 	AS "Propriedade Endereço",        
+PROPRIEDADEMUNICIPIO 	AS "Propriedade Municipio",        
+PROPRIEDADEUF 			AS "Propriedade Cliente UF",        
+FORNECEDORERP 			AS "Código Fornecedor",        
+FORNECEDORNOME 			AS "Fornecedor Nome",        
+FORNECEDORVINCULOERP 	AS "Código Vinculo Fornecedor",        
+FORNECEDORVINCULONOME 	AS "Vinculo Fornecedor Nome",        
+NOMEMARCA 				AS "Marca Nome",        
+PRODUTOERP 				AS "Código Produto",        
+PRODUTONOME 			AS "Produto Nome",        
+CONDICAOPAGAMENTOERP 	AS "Código Condição Pagamento",        
+CONDICAOPAGAMENTO 		AS "Condição Pagamento Nome",        
+QUANTIDADE 				AS "Qtde Original",        
+QUANTIDADEPERDIDA 		AS "Qtde Perdida",        
+QUANTIDADEDESFAZIMENTO 	AS "Qtde Desfazimento",        
+(QUANTIDADE - QUANTIDADEPERDIDA - QUANTIDADEDESFAZIMENTO)  AS "Qtde Vendida",        
+QUANTIDADEENTREGUE 		AS "Qtde Faturada",        
+SALDO 					AS "Qtde Saldo",        
+UNIDADEPRODUTO 			AS "Unid Produto",        
+VALORUNITARIO 			AS "Valor Unitario",        
+VALORDESCONTO 			AS "Valor Desconto",        
+VALORTOTAL 				AS "Valor Original",        
+(QUANTIDADE - NVL(QUANTIDADEPERDIDA,0) - NVL(QUANTIDADEDESFAZIMENTO,0) * (NVL(VALORUNITARIO,0) - NVL(VALORDESCONTO,0))) AS "Valor Vendida",        
+(QUANTIDADEENTREGUE * (VALORUNITARIO - NVL(VALORDESCONTO,0))) AS "Valor Faturado",        
+VALORSALDO 				AS "Valor Saldo",        
+NVL(INDEXADOR,'RS$') 	AS "Indexador",        
+INDEXADORDATA 			AS "Indexador Data",        
+INDEXADORVALOR 			AS "Indexador Valor",        
+CUSTOTABELA 			AS "Custo Tabela",        
+CUSTOMEDIO 				AS "Custo Médio",        
+DATAVENCIMENTO 			AS "Data Vencimento",        
+SITUACAOPEDIDO 			AS "Código Situação Pedido",        
+SITUACAOPEDIDONOME 		AS "Situação Pedido Nome",        
+DATANEGOCIACAOC 		AS "Data Negociação Contrato",        
+COTACAONEGOCIACAOC 		AS "Cotação Negociação Contrato",        
+DATAPREVISAOENTREGA 	AS "Data Previsão Entrega",        
+NORMATIZADAORIGINAL 	AS "Normalizada Original",        
+CODIGOTABELA 			AS "CodigoTabela",        
+TABELANOME 				AS "NomeTabela",        
+PRECOTABELA 			AS "Preço de Tabela",        
+IDENTIFICACAOCRM 		AS "IdentificacaoCRM",        
+TIPO 					AS "Tipo",        
+SERIE 					AS "Serie",        
+TIPOOPERACAOERP 		AS "Código Tipo Operação",        
+TIPOOPERACAONOME 		AS "Descrição Tipo Operação",        
+NUMEROPEDIDOORIGEM 		AS "Numero Pedido Origem",        
+QUANTIDADEDEVOLVIDA 	AS "Quantidade Devolvida",        
+ULTIMAALTERACAO 		AS "Ultima Alteração",        
+USUARIOINCLUSAO 		AS "Usuario Inclusão",        
+USUARIOALTERACAO 		AS "Usuário Alteração",        
+DOCUMENTOPARCEIRO 		AS "CPF-CPNJ CLiente",        
+DATAATUALIZACAO 		AS "Data Atualização",        
+DATABASE 				AS "Data Base",        
+NORMATIZADAENTREGUE 	AS "Normatizada Faturada",        
+NORMATIZADADEVOLVIDA 	AS "Normatizada Devolvida",        
+NORMATIZADAPERDIDA 		AS "Normatizada Perdida",        
+NORMATIZADADESFAZIMENTO AS "Normatizada Desfazimento",        
+NORMATIZADASALDO 		AS "Normatizada Saldo",       
+(NVL(NORMATIZADAORIGINAL,0) - NVL(NORMATIZADAPERDIDA,0) - NVL(NORMATIZADADESFAZIMENTO,0))  AS "Normatizada Vendida"   
+FROM VW_BASEVENDIDO PED;
+
+STORE Carteira_Pedido_Venda_DW INTO [lib://0.Extract/Carteira_Pedido_Venda_DW.qvd](qvd);
+Drop Table Carteira_Pedido_Venda_DW;
+
+Tabela_Preco_DW:
+SELECT 
+TABELAPRECOERP 		AS "Cod. Tabela",        
+TABLEPRECONOME 		AS "Nome Tabela",         
+GRUPOPRODUTOERP 	AS "Cod. Grupo",        
+GRUPOPRODUTONOME 	AS "Nome Grupo",        
+SUBGRUPOPRODUTOERP 	AS "Cod. SubGrupo",        
+SUBGRUPONOME 		AS "Nome SubGrupo",        
+PRODUTOERP 			AS "Cod Produto",        
+PRODUTONOME 		AS "Nome Produto",        
+MARCAPRODUTO 		AS "Marca Produto",        
+DATATABELA 			AS "Data Tabela",        
+SITUACAOTABELAERP 	AS "Situacao Tabela",        
+UNIDADEPRODUTOERP 	AS "Unidade Produto",        
+PRECOTABELA 		AS "Preço Tabela",        
+CUSTOTABELA 		AS "Custo Tabela",        
+QUANTIDADEPRODUTO 	AS "Qtde Produto",        
+DATAATUALIZACAO 	AS "Dataatualizacao",        
+DATAINSERCAO 		AS "Data Insercao"   
+FROM VW_BI_TABELAPRECO;
+STORE Tabela_Preco_DW INTO [lib://0.Extract/Tabela_Preco_DW.qvd](qvd);
+Drop Table Tabela_Preco_DW;
+
+Posicao_Estoque_DW:
+SELECT 
+"VW_BI_ESTOQUE"."ESTOQUEID" 				AS "ESTOQUEID",   
+"VW_BI_ESTOQUE"."UNIDADENOME" 				AS "UNIDADENOME",   
+"VW_BI_ESTOQUE"."UNIDADEESTOQUEERP" 		AS "UNIDADEESTOQUEERP",   
+"VW_BI_ESTOQUE"."UNIDADEESTOQUE" 			AS "UNIDADEESTOQUE",   
+"VW_BI_ESTOQUE"."REGIONALNOME" 				AS "REGIONALNOME",   
+"VW_BI_ESTOQUE"."GRUPOPRODUTOID" 			AS "GRUPOPRODUTOID",   
+"VW_BI_ESTOQUE"."GRUPOPRODUTONOME" 			AS "GRUPOPRODUTONOME",   
+"VW_BI_ESTOQUE"."SUBGRUPOID" 				AS "SUBGRUPOID",   
+"VW_BI_ESTOQUE"."SUBGRUPONOME" 				AS "SUBGRUPONOME",   
+"VW_BI_ESTOQUE"."PRODUTOERP" 				AS "PRODUTOERP",   
+"VW_BI_ESTOQUE"."NOMEPRODUTO" 				AS "NOMEPRODUTO",   
+"VW_BI_ESTOQUE"."FORNECEDORERP" 			AS "FORNECEDORERP",   
+"VW_BI_ESTOQUE"."NOMEFORNECEDOR" 			AS "NOMEFORNECEDOR",   
+"VW_BI_ESTOQUE"."NOMEMARCA" 				AS "NOMEMARCA",   
+"VW_BI_ESTOQUE"."LOTE" 						AS "LOTE",   
+"VW_BI_ESTOQUE"."DATAFABRICACAO" 			AS "DATAFABRICACAO",   
+"VW_BI_ESTOQUE"."DATAVENCIMENTO" 			AS "DATAVENCIMENTO",   
+"VW_BI_ESTOQUE"."SALDO" 					AS "SALDO",   
+"VW_BI_ESTOQUE"."CUSTOMEDIOUNIDADE" 		AS "CUSTOMEDIOUNIDADE",   
+"VW_BI_ESTOQUE"."CUSTOMEDIOREGIONAL" 		AS "CUSTOMEDIOREGIONAL",   
+"VW_BI_ESTOQUE"."CUSTOMEDIOGERAL" 			AS "CUSTOMEDIOGERAL",   
+"VW_BI_ESTOQUE"."CUSTOMEDIONOTAENTRADA" 	AS "CUSTOMEDIONOTAENTRADA",   
+"VW_BI_ESTOQUE"."CUSTOMEDIONOTASAIDA" 		AS "CUSTOMEDIONOTASAIDA",   
+"VW_BI_ESTOQUE"."CUSTOTABELAPRECO" 			AS "CUSTOTABELAPRECO",   
+"VW_BI_ESTOQUE"."CUSTOMEDIO" 				AS "CUSTOMEDIO",   
+"VW_BI_ESTOQUE"."TOTALCUSTO" 				AS "TOTALCUSTO",   
+"VW_BI_ESTOQUE"."TIPOCUSTOMEDIO" 			AS "TIPOCUSTOMEDIO",   
+"VW_BI_ESTOQUE"."DATAATUALIZACAO" 			AS "DATAATUALIZACAO",   
+"VW_BI_ESTOQUE"."ESTADOESTOQUE" 			AS "ESTADOESTOQUE",   
+"VW_BI_ESTOQUE"."MESVENCIMENTO" 			AS "MESVENCIMENTO",   
+"VW_BI_ESTOQUE"."ANOVENCIMENTO" 			AS "ANOVENCIMENTO",   
+"VW_BI_ESTOQUE"."PERIODOVENCIMENTO" 		AS "PERIODOVENCIMENTO" 
+FROM "RURALDW"."VW_BI_ESTOQUE" "VW_BI_ESTOQUE";
+
+STORE Posicao_Estoque_DW INTO [lib://0.Extract/Posicao_Estoque_DW.qvd](qvd);
+Drop Table Posicao_Estoque_DW;
+
+
+//fim extração DW projeto monitoramento Diretoria//
+
+TB_QLIK_LANCAMENTOS_CONTABEIS:
+SELECT
+	CODIGO_CABECALHO,
+	DATA_LANC_CONTABIL,
+    LOJA,
+    TIPO_FISCAL_SOCIETARIO,
+    CONTA_CONTABIL,
+    DES_CONTA_CONTABIL,
+    CONTA_CONTABIL_HISTORICO,
+    DEBITO_CREDITO,
+    VALOR
+   // ORIG_CLC
+FROM
+	"RURALDW".TB_QLIK_LANCAMENTOS_CONTABEIS
+;
+
+STORE TB_QLIK_LANCAMENTOS_CONTABEIS INTO [lib://0.Extract/TB_QLIK_LANCAMENTOS_CONTABEIS.qvd](qvd);
+
+DROP TABLE TB_QLIK_LANCAMENTOS_CONTABEIS;
+
+
+
+FatDadosVenda6:
+select nt.demi_not as Data_Emissao,
+       nt.nota_not as Numero_NF,
+       substr(nt.situ_not, 1) as Situacao_NF,
+       nt.ccfo_cfo as CFOP,
+       nt.codi_emp as Loja,
+       cl.desc_cic as Ciclo,
+       it.codi_psv as Cod_Produto,
+       ps.desc_psv as Desc_Prod_Original,
+       gr.desc_gpr as Grupo_Original,
+       sg.desc_sbg as Subgrupo,
+       pa.codi_tra as Cod_Parceiro,
+       vi.codi_vin as Cod_Vinculo,
+       pa.raza_tra as Parceiro,
+       pa.cgc_tra,
+       vd.nome_pes,
+       mu.desc_mun as Municipio,
+       mu.esta_mun as UF,
+       pd.MARC_PRO as Marca_Produto,
+       it.ITEM_INO,
+       It.QTDE_INO,
+       round(It.VLIQ_INO, 6) as Valor_Unitario,
+       round(It.CMVD_INO, 6) as Custo_Medio,
+       round(It.CTAB_INO, 6) as Custo_Tabela,
+       It.DANT_TAB as Desconto_Fin_Tabela,
+       round(It.PVTB_INO, 6) as Preco_Venda_Tabela,
+       It.TABE_CTA as Codigo_Tabela,
+       tp.DESC_CTA as Descricao_Tabela,
+       nt.cod1_pes as Codigo_Consultor,
+       co.codi_ind as Codigo_Indexador,
+       (select valor_ind
+          from table(ruralb.ret_vlorind(nt.codi_emp,
+                                        co.codi_ind,
+                                        nt.demi_not))) as Valor_Indexador,
+       cob.duplicata,
+       cob.vencimento,
+       cob.parcelas
+  FROM RURALB.INOTA IT
+  LEFT JOIN RURALB.NOTA NT
+    ON NT.NPRE_NOT = IT.NPRE_NOT
+  LEFT JOIN RURALB.PRODSERV PS
+    ON PS.CODI_PSV = IT.CODI_PSV
+  LEFT JOIN RURALB.SUBGRUPO SG
+    ON SG.CODI_SBG = PS.CODI_SBG
+   AND SG.CODI_GPR = PS.CODI_GPR
+  LEFT JOIN RURALB.GRUPO GR
+    ON GR.CODI_GPR = SG.CODI_GPR
+  LEFT JOIN RURALB.PRODUTO PD
+    ON PD.CODI_PSV = PS.CODI_PSV
+  LEFT JOIN RURALB.CFO CF
+    ON CF.CCFO_CFO = NT.CCFO_CFO
+  LEFT JOIN RURALB.PESSOAL VD
+    ON VD.CODI_PES = NT.COD1_PES
+  LEFT JOIN RURALB.CICLO CL
+    ON CL.CODI_CIC = NT.CODI_CIC
+  LEFT JOIN RURALB.TRANSAC PA
+    ON PA.CODI_TRA = NT.CODI_TRA
+  LEFT JOIN RURALB.VINCULO VI
+    ON VI.CODI_VIN = PA.CODI_TRA
+  LEFT JOIN RURALB.CONDICAO CO
+    ON CO.COND_CON = NT.COND_CON
+  LEFT JOIN RURALB.TRANSAC PA2
+    ON PA2.CODI_TRA = VI.CODI_TRA
+  LEFT JOIN RURALB.CADEMP EM
+    ON EM.CODI_EMP = NT.CODI_EMP
+  LEFT JOIN RURALB.MUNICIPIO MU
+    ON MU.CODI_MUN = PA.CODI_MUN
+  LEFT JOIN RURALB.CABTAB TP
+    ON TP.TABE_CTA = IT.TABE_CTA
+  LEFT JOIN (SELECT NOTA_NOT,
+                   CODI_EMP,
+                   SERI_NOT,
+                   NVL(MAX(DUPLICATACRC),MAX(DUPLICATAORIG)) AS DUPLICATA,
+                   NVL(MAX(VENCIMENTOCRC),MAX(VENCIMENTOORIG)) AS VENCIMENTO,
+                   NVL(MAX(PARCELASCRC),MAX(PARCELASORIG)) AS PARCELAS,
+                   MAX(PARCELASORIG) AS PARCELASORIG
+              FROM (SELECT NF1.NOTA_NOT,
+                           NF1.CODI_EMP,
+                           NF1.SERI_NOT,
+                           TO_CHAR(REC2.NUME_CBR) AS DUPLICATACRC,
+                           MIN(REC3.VEN2_REC) AS VENCIMENTOCRC,
+                           MAX(REC1.NPAR_REC) AS PARCELASCRC,
+                           NULL AS DUPLICATAORIG,
+                           NULL AS VENCIMENTOORIG,
+                           NULL AS PARCELASORIG
+                     FROM (SELECT NT.NOTA_NOT,
+                                  NT.CODI_EMP,
+                                  NT.SERI_NOT,
+                                  MAX(CTRL_CBR) AS CTRL_CBR
+                             FROM RURALB.NOTACRC NCR INNER JOIN
+                                  RURALB.NOTA NT ON (NCR.NDOC_NOC = NT.NOTA_NOT AND
+                                                     NCR.CODI_EMP = NT.CODI_EMP AND
+                                                     NCR.SDOC_NOC = NT.SERI_NOT)
+                            WHERE NCR.TDOC_NOC = 'NE'
+                              //AND NT.DEMI_NOT >= TO_DATE('2019-01-01','YYYY-MM-DD')
+                              AND NT.CODI_EMP < 48
+                              AND NT.CODI_EMP NOT IN (7, 8, 10)
+                              AND NT.SITU_NOT NOT IN (9)
+                              AND NT.NOTA_NOT NOT IN (999999999) 
+                              AND TO_NUMBER(SUBSTR(NT.CCFO_CFO, 0, 4)) IN
+                                 (1202, 1504, 2201, 2202, 2504, 5101, 5102,
+                                  5106, 5114, 5115, 5117, 5119, 5120, 5502,
+                                  5933, 6102, 6106, 6114, 6115, 6117, 6119,
+                                  6120, 6502, 6933)
+                            GROUP BY NT.NOTA_NOT,
+                                     NT.CODI_EMP,
+                                     NT.SERI_NOT) NF1 LEFT JOIN
+                           RURALB.RECEBER REC1 ON (REC1.CTRL_CBR = NF1.CTRL_CBR) LEFT JOIN
+                           RURALB.CABREC REC2 ON (REC2.CTRL_CBR = NF1.CTRL_CBR)LEFT JOIN
+                           RURALB.RECEBER REC3 ON (REC3.CTRL_CBR = NF1.CTRL_CBR) 
+                     WHERE REC3.VLOR_REC =(SELECT MAX(REC4.VLOR_REC)
+                                          FROM RURALB.RECEBER REC4
+                                         WHERE REC3.CTRL_CBR = REC4.CTRL_CBR)
+                     GROUP BY NF1.NOTA_NOT,
+                              NF1.CODI_EMP,
+                              NF1.SERI_NOT,
+                              TO_CHAR(REC2.NUME_CBR)      
+                    UNION ALL
+                    SELECT NTA4.NOTA_NOT,
+                           NTA4.CODI_EMP,
+                           NTA4.SERI_NOT,
+                           NULL AS DUPLICATACRC,
+                           NULL AS VENCIMENTOCRC,
+                           NULL AS PARCELASOCRC,
+                           to_char(CREC.nume_cbr),
+                           MIN(REC.VEN2_REC) AS VENCIMENTOORIG,
+                           MAX(REC.NPAR_REC) AS PARCELASORIG
+                      FROM (SELECT NTA3.NOTA_NOT,
+                                   NTA3.CODI_EMP,
+                                   NTA3.SERI_NOT,
+                                   MAX(NCR.CTRL_CBR) AS CTRL_CBR
+                              FROM        
+                                   
+                                   (SELECT NTA2.NOTA_NOT,
+                                          NTA2.CODI_EMP,
+                                          NTA2.SERI_NOT,
+                                          NTA2.CODI_EMP_ORI,
+                                          NTA2.SERO_NFR_ORI,
+                                          (SELECT MAX(NT1.NOTA_NOT)
+                                             FROM RURALB.NOTA NT1
+                                            WHERE NT1.NPRE_NOT = NTA2.NOTO_NFR_ORI) AS NOTA_NOT_ORI
+                                    FROM
+                                        (SELECT NTA.NOTA_NOT,
+                                               NTA.CODI_EMP,
+                                               NTA.SERI_NOT,
+                                               MAX(NTA.CODI_EMP_ORI) AS CODI_EMP_ORI,
+                                               MAX(NTA.SERO_NFR) AS SERO_NFR_ORI,
+                                               MAX(NTA.NOTO_NFR) AS NOTO_NFR_ORI
+                                          FROM 
+                                        (SELECT 'NOTA' AS TIPO,
+                                                NT.NOTA_NOT,
+                                                NT.CODI_EMP,
+                                                NT.SERI_NOT,
+                                                NTR.CODI_EMP AS CODI_EMP_ORI,
+                                                NTR.SERO_NFR,
+                                                0 AS CTRL_CPG,
+                                                0 AS CTRL_CBR,
+                                                NTR.NOTO_NFR
+                                           FROM RURALB.NOTA NT INNER JOIN
+                                                RURALB.NOTAORIG NTR  ON (NTR.NOTD_NFR = NT.NPRE_NOT) 
+                                          WHERE// NT.DEMI_NOT >= TO_DATE('2019-01-01','YYYY-MM-DD') AND
+                                            NT.CODI_EMP < 48
+                                           AND NT.CODI_EMP NOT IN (7, 8, 10)
+                                           AND NT.SITU_NOT NOT IN (9)
+                                           AND NT.NOTA_NOT NOT IN (999999999)
+                                           AND TO_NUMBER(SUBSTR(NT.CCFO_CFO, 0, 4)) IN
+                                               (1202, 1504, 2201, 2202, 2504, 5101, 5102,
+                                                5106, 5114, 5115, 5117, 5119, 5120, 5502,
+                                                5933, 6102, 6106, 6114, 6115, 6117, 6119,
+                                                6120, 6502, 6933)
+                                         ) NTA
+                                     GROUP BY NTA.NOTA_NOT,
+                                              NTA.CODI_EMP,
+                                              NTA.SERI_NOT) NTA2 )NTA3 LEFT JOIN
+                                    RURALB.NOTACRC NCR ON ncr.ndoc_noc = NTA3.NOTA_NOT_ORI AND 
+                                                          ncr.codi_emp = NTA3.CODI_EMP_ORI AND
+                                                          ncr.sdoc_noc = NTA3.SERO_NFR_ORI AND
+                                                          ncr.tdoc_noc = 'NE'
+                              GROUP BY NTA3.NOTA_NOT,
+                                       NTA3.CODI_EMP,
+                                       NTA3.SERI_NOT) NTA4 LEFT JOIN
+                              RURALB.CABREC CREC ON (CREC.CTRL_CBR = NTA4.CTRL_CBR) LEFT JOIN
+                              RURALB.RECEBER REC ON (REC.CTRL_CBR = NTA4.CTRL_CBR) 
+                        GROUP BY NTA4.NOTA_NOT,
+                           NTA4.CODI_EMP,
+                           NTA4.SERI_NOT,
+                           to_char(CREC.nume_cbr))
+               GROUP BY NOTA_NOT,
+                     CODI_EMP,
+                     SERI_NOT) COB
+     ON (COB.NOTA_NOT = NT.NOTA_NOT AND
+         COB.CODI_EMP = NT.CODI_EMP AND
+         COB.SERI_NOT =  NT.SERI_NOT)          
+ WHERE 
+ //NT.DEMI_NOT >= TO_DATE('2019-01-01','YYYY-MM-DD') AND
+ 	NT.CODI_EMP < 48
+   AND NT.CODI_EMP NOT IN (7, 8, 10)
+   AND NT.SITU_NOT NOT IN (9)
+   AND NT.NOTA_NOT NOT IN (999999999)
+   AND GR.CODI_GPR NOT IN (5,
+                           6,
+                           10,
+                           11,
+                           11000007,
+                           11000008,
+                           11000011,
+                           11000012,
+                           11000013,
+                           11000015,
+                           11000016,
+                           11000018,
+                           11000023,
+                           11000024,
+                           11000026,
+                           11000027)
+   AND TO_NUMBER(SUBSTR(NT.CCFO_CFO, 0, 4)) IN
+       (1202,
+        1504,
+        2201,
+        2202,
+        2504,
+        5101,
+        5102,
+        5106,
+        5114,
+        5115,
+        5117,
+        5119,
+        5120,
+        5502,
+        5933,
+        6102,
+        6106,
+        6114,
+        6115,
+        6117,
+        6119,
+        6120,
+        6502,
+        6933)
+UNION ALL
+SELECT nt.drec_nfe,
+       nt.nume_nfe,
+       substr(nt.rast_nfe, 1),
+       nt.ccfo_cfo,
+       nt.codi_emp,
+       cl.desc_cic,
+       it.codi_psv,
+       ps.desc_psv,
+       gr.desc_gpr,
+       sg.desc_sbg,
+       pa.codi_tra,
+       vi.codi_vin,
+       pa.raza_tra,
+       pa.cgc_tra,
+       vd.nome_pes,
+       mu.desc_mun,
+       mu.esta_mun,
+       pd.MARC_PRO,
+       it.ITEM_INF,
+       It.QUAN_INF,
+       round(It.VLIQ_INF, 6),
+       round(It.CMED_INF, 6),
+       round(It.CTAB_INF, 6),
+       0,
+       It.PVTB_INF,
+       1,
+       'NULL',
+       nt.cod1_pes,
+       co.codi_ind,
+       (select valor_ind
+          from table(ruralb.ret_vlorind(nt.codi_emp,
+                                        co.codi_ind,
+                                        nt.drec_nfe))) as Valor_Indexador,
+       rec.duplicata,
+       rec.vencimento,
+       rec.parcela
+  FROM RURALB.INFENTRA IT
+ INNER JOIN RURALB.NFENTRA NT
+    ON NT.CODI_EMP = IT.CODI_EMP
+   AND NT.CODI_TRA = IT.CODI_TRA
+   AND NT.NUME_NFE = IT.NUME_NFE
+   AND NT.SERI_NFE = IT.SERI_NFE
+  LEFT JOIN RURALB.CFO CF
+    ON CF.CCFO_CFO = NT.CCFO_CFO
+  LEFT JOIN RURALB.CICLO CL
+    ON CL.CODI_CIC = NT.CODI_CIC
+  LEFT JOIN RURALB.PRODSERV PS
+    ON PS.CODI_PSV = IT.CODI_PSV
+  LEFT JOIN RURALB.SUBGRUPO SG
+    ON SG.CODI_SBG = PS.CODI_SBG
+   AND SG.CODI_GPR = PS.CODI_GPR
+  LEFT JOIN RURALB.GRUPO GR
+    ON GR.CODI_GPR = SG.CODI_GPR
+  LEFT JOIN RURALB.PRODUTO PD
+    ON PD.CODI_PSV = PS.CODI_PSV
+  LEFT JOIN RURALB.PESSOAL VD
+    ON VD.CODI_PES = NT.COD1_PES
+  LEFT JOIN RURALB.TRANSAC PA
+    ON PA.CODI_TRA = NT.CODI_TRA
+  LEFT JOIN RURALB.VINCULO VI
+    ON VI.CODI_VIN = PA.CODI_TRA
+  LEFT JOIN RURALB.CONDICAO CO
+    ON CO.COND_CON = NT.COND_CON
+  LEFT JOIN RURALB.CADEMP EM
+    ON EM.CODI_EMP = NT.CODI_EMP
+  LEFT JOIN RURALB.MUNICIPIO MU
+    ON MU.CODI_MUN = PA.CODI_MUN
+  LEFT JOIN ( SELECT NF3.NUME_NFE,
+                     NF3.CODI_EMP,
+                     NF3.SERI_NFE,
+                     MAX(DUPLICATACRC) AS DUPLICATA,
+                     MAX(DATAVENCIMENTOCRC) AS VENCIMENTO,
+                     MAX(NUMEROPARCELASCRC) AS PARCELA
+                FROM  (/*SELECT NFEN1.NUME_NFE,
+                              NFEN1.CODI_EMP,
+                              NFEN1.SERI_NFE,
+                              TO_CHAR(CPAG.DOCU_CPG) AS DUPLICATAP,
+                              MIN(DVEN_PAG) AS DATAVENCIMENTOP,
+                              MAX(NPAR_PAG) AS NUMEROPARCELASP,
+                              NULL AS DUPLICATACRC,
+                              NULL AS VENCIMENTOCRC,
+                              NULL AS NUMEROPARCELACRC
+                        FROM (SELECT NT.NUME_NFE,
+                                     NT.CODI_EMP,
+                                     NT.SERI_NFE,
+                                     MAX(NCP.CTRL_CPG) AS CTRL_CPG
+                                FROM RURALB.NFENTRA NT INNER JOIN
+                                     RURALB.NOTACPG NCP ON (NCP.NDOC_NCP = NT.NUME_NFE AND
+                                                            NCP.CODI_EMP = NT.CODI_EMP AND
+                                                            NCP.SDOC_NCP = NT.SERI_NFE)
+                               WHERE NCP.TDOC_NCP IN ('NT')
+                                 AND NT.DREC_NFE >= '01.01.2015'
+                                 AND NT.CODI_EMP < 48
+                                 AND NT.CODI_EMP NOT IN (7, 8, 10)
+                                 AND NT.RAST_NFE NOT IN (9)
+                                 AND NT.NUME_NFE NOT IN (999999999)
+                                 AND TO_NUMBER(SUBSTR(NT.CCFO_CFO, 0, 4)) IN
+                                     (1202, 1504, 2201, 2202, 2504, 5101, 5102, 5106, 5114, 5115,
+                                      5117, 5119, 5120, 5502, 5933, 6102, 6106, 6114, 6115, 6117, 6119,
+                                      6120, 6502, 6933)
+                                GROUP BY NT.NUME_NFE,
+                                         NT.CODI_EMP,
+                                         NT.SERI_NFE) NFEN1 LEFT JOIN
+                               RURALB.PAGAR PAG ON (PAG.CTRL_CPG = NFEN1.CTRL_CPG)  LEFT JOIN
+                               RURALB.CABPAGAR CPAG ON (CPAG.CTRL_CPG = NFEN1.CTRL_CPG) 
+                        WHERE PAG.VLOR_PAG = (SELECT MAX(VLOR_PAG)
+                                                FROM RURALB.PAGAR PAG2
+                                               WHERE PAG2.CTRL_CPG = NFEN1.CTRL_CPG)
+                        GROUP BY NFEN1.NUME_NFE,
+                                 NFEN1.CODI_EMP,
+                                 NFEN1.SERI_NFE,
+                                 CPAG.DOCU_CPG
+                        UNION ALL*/
+                        SELECT NFEN2.NUME_NFE,
+                               NFEN2.CODI_EMP,
+                               NFEN2.SERI_NFE,
+                               NULL AS DUPLICATAP,
+                               NULL AS VENCIMENTOP,
+                               NULL AS NUMEROPARCELAP,
+                               TO_CHAR(NUME_CBR) AS DUPLICATACRC,
+                               MIN(VEN2_REC) AS DATAVENCIMENTOCRC,
+                               MAX(NPAR_REC) AS NUMEROPARCELASCRC
+                          FROM (SELECT NT.NUME_NFE,
+                                       NT.CODI_EMP,
+                                       NT.SERI_NFE,
+                                       MAX(CTRL_CBR) AS CTRL_CBR
+                                  FROM RURALB.NOTACRC NCR INNER JOIN
+                                       RURALB.NFENTRA NT ON (NCR.NDOC_NOC = NT.NUME_NFE AND
+                                                           NCR.CODI_EMP = NT.CODI_EMP AND
+                                                           NCR.SDOC_NOC = NT.SERI_NFE)
+                                  WHERE NCR.TDOC_NOC IN ('NT')
+                                    //AND NT.DREC_NFE >= TO_DATE('2019-01-01','YYYY-MM-DD')
+                                    AND NT.CODI_EMP < 48
+                                    AND NT.CODI_EMP NOT IN (7, 8, 10)
+                                    AND NT.RAST_NFE NOT IN (9)
+                                    AND NT.NUME_NFE NOT IN (999999999)
+                                    AND TO_NUMBER(SUBSTR(NT.CCFO_CFO, 0, 4)) IN
+                                        (1202, 1504, 2201, 2202, 2504, 5101, 5102,
+                                         5106, 5114, 5115, 5117, 5119, 5120, 5502,
+                                         5933, 6102, 6106, 6114, 6115, 6117, 6119,
+                                         6120, 6502, 6933)
+                                  GROUP BY NT.NUME_NFE,
+                                           NT.CODI_EMP,
+                                           NT.SERI_NFE) NFEN2 LEFT JOIN 
+                               RURALB.RECEBER REC ON (REC.CTRL_CBR = NFEN2.CTRL_CBR) LEFT JOIN 
+                               RURALB.CABREC REC  ON (REC.CTRL_CBR  = NFEN2.CTRL_CBR)
+                          GROUP BY NFEN2.NUME_NFE,
+                                   NFEN2.CODI_EMP,
+                                   NFEN2.SERI_NFE,
+                                   TO_CHAR(NUME_CBR)) NF3
+                GROUP BY NF3.NUME_NFE,
+                         NF3.CODI_EMP,
+                         NF3.SERI_NFE) REC
+    ON (REC.NUME_NFE = nt.nume_nfe AND
+        REC.CODI_EMP = nt.codi_emp AND
+        REC.SERI_NFE = nt.SERI_NFE)                             
+ WHERE
+ //NT.DREC_NFE >= TO_DATE('2019-01-01','YYYY-MM-DD')AND
+ NT.CODI_EMP < 48
+   AND NT.CODI_EMP NOT IN (7, 8, 10)
+   AND NT.RAST_NFE NOT IN (9)
+   AND NT.NUME_NFE NOT IN (999999999)
+   AND TO_NUMBER(SUBSTR(NT.CCFO_CFO, 0, 4)) IN
+       (1202,
+        1504,
+        2201,
+        2202,
+        2504,
+        5101,
+        5102,
+        5106,
+        5114,
+        5115,
+        5117,
+        5119,
+        5120,
+        5502,
+        5933,
+        6102,
+        6106,
+        6114,
+        6115,
+        6117,
+        6119,
+        6120,
+        6502,
+        6933) ;
+        
+        
+STORE FatDadosVenda6 INTO [LIB://0.Extract/DW/FatDadosVenda6.qvd](QVD);
+
+DROP TABLE FatDadosVenda6;

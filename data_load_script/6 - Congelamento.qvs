@@ -1,0 +1,2 @@
+///$tab 6 - Congelamento
+call SubCongelamentoInformacao('2.Arquivos/TI');

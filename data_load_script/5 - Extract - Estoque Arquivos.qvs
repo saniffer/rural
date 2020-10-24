@@ -1,0 +1,37 @@
+///$tab 5 - Extract - Estoque Arquivos
+ProdutoSKU:
+
+LOAD Distinct
+    Chave					as CHAVE,
+    Loja					AS UNIDADEERP,
+    Cód						AS COD,
+    "DESCRIÇÃO DO PRODUTO"	AS DESCRICAO_PRODUTO,
+    AGRUPADOR,
+    "PRINCIPIO ATIVO"		AS PRINCIPIO_ATIVO,
+    "PORT/DESC"				AS PORT_DESC,
+    FORNECEDOR,
+    GRUPO
+FROM [lib://2.Arquivos/Cad_SKU.xlsx] (ooxml, embedded labels, table is Cad_SKU_Loja);
+STORE ProdutoSKU INTO [lib://0.Extract/ProdutoSKU.qvd](qvd);
+Drop Table ProdutoSKU;
+
+
+Regional: 
+LOAD
+    LOJA,
+    UNIDADE,
+    REGIAO,
+    REGIONALCOD,
+    REGIONAL,
+    COD_PRECIFICACAO,
+    SITUACAO,
+    DIRETORIA,
+    DIRETOR,
+    UNIDADE_ABREVIADA,
+    REGIONAL_ABREVIADA,
+    REG_RECEBIMENTO,
+    REGIAO_PPR,
+    RAZAO_SOCIAL
+FROM [lib://2.Arquivos/CAD_SKU_LOJA.xlsx](ooxml, embedded labels, table is REGIAO);
+STORE Regional INTO [lib://0.Extract/Regional.qvd](qvd);
+Drop Table Regional;
