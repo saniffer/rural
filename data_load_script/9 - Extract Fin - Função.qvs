@@ -1,0 +1,37 @@
+///$tab 9 - Extract Fin - Função
+//Extração da Funcção Titulos em Aberto Siagri
+LIB CONNECT TO 'Siagri';
+
+Tab_VALOR_ABERTO_RECEBER:
+select    
+
+         R.CTRL_CBR,
+          C.CODI_TRA, 
+          (select VALOR from  table( RURALB.VALOR_ABERTO_RECEBER(R.CTRL_REC))) as "VLAB_REC"
+  
+from RURALB.CABREC C
+        join RURALB.RECEBER R      on (C.CTRL_CBR  = R.CTRL_CBR)
+        left outer join RURALB.PROPRIED  PRO  on (C.PROP_PRO = PRO.PROP_PRO)
+        join RURALB.TRANSAC T      on (T.CODI_TRA  = C.CODI_TRA)
+        left outer join RURALB.LIMITECR LCR   on (T.CODI_TRA = LCR.CODI_TRA)
+        join RURALB.TIPDOC TD      on (TD.CODI_TDO = C.CODI_TDO)
+        left outer join RURALB.TIPCOB TC      on (R.CODI_TCO   = TC.CODI_TCO)
+        left outer join RURALB.CLIENTE CL     on (CL.CODI_TRA = T.CODI_TRA)
+        left outer join RURALB.INDEXADOR I    on (I.CODI_IND = R.CODI_IND)
+        left outer join RURALB.CONTA          on (R.CODI_CON  = CONTA.CODI_CON)
+        left outer join RURALB.AGENBAN A      on (A.CODI_AGE  = CONTA.CODI_AGE)
+        left outer join RURALB.BANCO B                on (A.CODI_BAN = B.CODI_BAN)
+        left outer join RURALB.PORTADOR P     on (R.CODI_POR  = P.CODI_POR)
+        left join RURALB.PESSOAL P1           on (P1.CODI_PES = R.COD1_PES)
+        left outer join RURALB.BOLETO BL      on (BL.CTRL_BOL = R.CTRL_BOL)
+        left outer join RURALB.CONDICAO CD on (R.COND_CON = CD.COND_CON)
+        left outer join RURALB.VENDEDORCLI VD on (C.CODI_TRA = VD.CODI_TRA and C.CODI_EMP = VD.CODI_EMP)
+        left outer join RURALB.VENDEDOR CV1   on (CV1.CODi_PES = VD.COD1_PES)
+        left outer join RURALB.VENDEDOR CV2   on (CV2.CODi_PES = VD.COD2_PES)
+        left outer join RURALB.VENDEDOR CAV1  on (CAV1.CODi_PES = R.COD1_PES)
+        left outer join RURALB.VENDEDOR CAV2  on (CAV2.CODi_PES = R.COD2_PES)
+        left outer join RURALB.MUNICIPIO  MUN on (MUN.CODI_MUN = T.CCOD_MUN)
+where (C.CTRL_CBR is not null)
+    and (R.SITU_REC <> 'C');
+STORE Tab_VALOR_ABERTO_RECEBER INTO [lib://0.Extract/Siagri/Tab_VALOR_ABERTO_RECEBER.qvd](qvd);
+Drop Table Tab_VALOR_ABERTO_RECEBER;

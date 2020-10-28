@@ -1,6 +1,146 @@
 [
   {
     "qInfo": {
+      "qId": "02a7bee1-1c0d-4456-ad92-bf3ac132e59e",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "25",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "25"
+  },
+  {
+    "qInfo": {
+      "qId": "037e1d95-d6cc-4663-bc4e-1fbce5f60646",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTemp_DepoisExecucao",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "28/10/2020 01:45:54"
+  },
+  {
+    "qInfo": {
+      "qId": "051f0acf-82fc-4dee-b918-f61e457495d3",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTemp_AntesExecucao",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "28/10/2020 01:45:48"
+  },
+  {
+    "qInfo": {
+      "qId": "057a3b52-d4cf-469b-a84e-173f7171d87b",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "50",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "50"
+  },
+  {
+    "qInfo": {
+      "qId": "0587de17-1007-4ca5-9a61-f4be0ed49eb3",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "4",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "4"
+  },
+  {
+    "qInfo": {
+      "qId": "06cd9a4d-be2b-4466-8d30-7bae8f279faa",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "45",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "45"
+  },
+  {
+    "qInfo": {
+      "qId": "071cb86c-ea31-4ac8-b501-d9669f40f8cc",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "40",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "40"
+  },
+  {
+    "qInfo": {
+      "qId": "079007b6-6fdd-4d89-96de-5ded6edba6ca",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "5",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "5"
+  },
+  {
+    "qInfo": {
+      "qId": "08236701-51aa-4fe3-bf85-4b5eb744908d",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "88",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "88"
+  },
+  {
+    "qInfo": {
+      "qId": "0a4518d8-95cc-4c09-b00d-f5d9822ecf2d",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "48",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "48"
+  },
+  {
+    "qInfo": {
       "qId": "0cd24bdb-8b83-469d-a5cb-36a1b43607bd",
       "qType": "variable"
     },
@@ -12,6 +152,188 @@
       "qUseThou": 0
     },
     "qDefinition": "DATE(DATE#('20200326','YYYYMMDD'))\tAS\tDataCongelamento"
+  },
+  {
+    "qInfo": {
+      "qId": "0d7f456b-f46b-47b6-932b-e1d01bd87b2a",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vIteracao",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "3"
+  },
+  {
+    "qInfo": {
+      "qId": "1281b88f-2dcd-4cdf-9fc9-e2f122435603",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "67",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "67"
+  },
+  {
+    "qInfo": {
+      "qId": "140ae691-6e0d-4db4-91e1-0144bec2c99a",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "84",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "84"
+  },
+  {
+    "qInfo": {
+      "qId": "1fb37517-4ddf-4e7d-ab4b-035e7b112edd",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "91",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "91"
+  },
+  {
+    "qInfo": {
+      "qId": "1fd730f2-14d8-44f1-b01c-d0a73328321b",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "71",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "71"
+  },
+  {
+    "qInfo": {
+      "qId": "201990ea-b318-42d7-a84d-1f723d942f40",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "49",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "49"
+  },
+  {
+    "qInfo": {
+      "qId": "21caa553-5c23-4714-80ab-aad780970ec2",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "42",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "42"
+  },
+  {
+    "qInfo": {
+      "qId": "232a8c38-be42-4337-b7d1-a56d4d0fa809",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vFormato_data",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "YYYYMMDD"
+  },
+  {
+    "qInfo": {
+      "qId": "24279199-9ce6-449a-8778-5896b40f5761",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vCaminho_origem",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "0.Extract/Siagri"
+  },
+  {
+    "qInfo": {
+      "qId": "244d4f9a-4848-4e81-ba86-ede306a2ec94",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vCount",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "0"
+  },
+  {
+    "qInfo": {
+      "qId": "2830cf61-ddb0-42ae-91d9-49f6976ac555",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "76",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "76"
+  },
+  {
+    "qInfo": {
+      "qId": "2b855e9f-a721-4fa0-89eb-b9a0af816847",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "68",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "68"
+  },
+  {
+    "qInfo": {
+      "qId": "2d6fda94-4215-4ba3-af82-b7115d835c93",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "43",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "43"
   },
   {
     "qInfo": {
@@ -29,6 +351,832 @@
   },
   {
     "qInfo": {
+      "qId": "344c8d92-d606-46d0-8784-472e661327b6",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "97",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "97"
+  },
+  {
+    "qInfo": {
+      "qId": "34fb6391-dc97-49f5-9e9c-1435ab85155c",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "82",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "82"
+  },
+  {
+    "qInfo": {
+      "qId": "36b87c07-2865-4c6d-bd05-6324c59e5324",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "6",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "6"
+  },
+  {
+    "qInfo": {
+      "qId": "37ef7b80-6631-440e-bd2e-8021a1e9ff85",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vQvd",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "SAIDAS_FATURADAS"
+  },
+  {
+    "qInfo": {
+      "qId": "3847a74d-e865-4e47-8bd9-574ed8bb2284",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "66",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "66"
+  },
+  {
+    "qInfo": {
+      "qId": "3da02adf-28b3-463e-9df8-d5f7c1c85718",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "62",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "62"
+  },
+  {
+    "qInfo": {
+      "qId": "3e92bf46-b5a5-4b30-b6bd-cbd41a222349",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vCaminhoDestino",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "0.Extract/PosicaoDiaria_Unificada"
+  },
+  {
+    "qInfo": {
+      "qId": "3ea0d8fd-010d-4f42-8397-ac66e22c4ef5",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "78",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "78"
+  },
+  {
+    "qInfo": {
+      "qId": "429f1fe3-ec3d-4e61-b61c-d656fdc99544",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "80",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "80"
+  },
+  {
+    "qInfo": {
+      "qId": "447fbc36-af3b-4ae5-bc24-3aaff42a963d",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "13",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "13"
+  },
+  {
+    "qInfo": {
+      "qId": "4534664a-95d8-4952-aa76-376fbe3f2147",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "44",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "44"
+  },
+  {
+    "qInfo": {
+      "qId": "4847308b-db36-422b-8933-95de344d152f",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "79",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "79"
+  },
+  {
+    "qInfo": {
+      "qId": "48cc8c9e-39c7-45eb-b6ba-71f6e193f455",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "58",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "58"
+  },
+  {
+    "qInfo": {
+      "qId": "48df7d8c-b586-4b37-abc8-46eabaf48bd7",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "24",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "24"
+  },
+  {
+    "qInfo": {
+      "qId": "4abbcf1e-9cab-4a15-9f93-e8b630d86675",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "0",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "0"
+  },
+  {
+    "qInfo": {
+      "qId": "4c3a1c7e-399c-46bc-8e6a-a0aeea9c127e",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "20",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "20"
+  },
+  {
+    "qInfo": {
+      "qId": "50e0622a-44ca-4037-82f9-af0ffcf876bc",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "54",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "54"
+  },
+  {
+    "qInfo": {
+      "qId": "5293bcda-f3d0-4d04-991c-23438de22a3f",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "8",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "8"
+  },
+  {
+    "qInfo": {
+      "qId": "5762ac3a-d8c7-41b0-85d5-c53a44a8799c",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "75",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "75"
+  },
+  {
+    "qInfo": {
+      "qId": "5f9c5413-1644-434f-b718-970830319e40",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "41",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "41"
+  },
+  {
+    "qInfo": {
+      "qId": "628e14fa-e508-4ebb-a371-5e4b4bef1404",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "7",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "7"
+  },
+  {
+    "qInfo": {
+      "qId": "62d1a344-f77c-48e7-8c61-df11276a775c",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "63",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "63"
+  },
+  {
+    "qInfo": {
+      "qId": "659449d9-c8a6-49af-81c0-3f961b3833d5",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "30",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "30"
+  },
+  {
+    "qInfo": {
+      "qId": "6b0d8e53-ec86-4bb7-90e0-6817ffb0523b",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "59",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "59"
+  },
+  {
+    "qInfo": {
+      "qId": "6bac4510-fbb7-4c85-b508-3466b3da9d1a",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "81",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "81"
+  },
+  {
+    "qInfo": {
+      "qId": "6e88fdb4-4f9d-4139-b336-9c25fb6539a6",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "21",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "21"
+  },
+  {
+    "qInfo": {
+      "qId": "6ee8ca9f-710f-477d-896a-4a6acb7dce2a",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "65",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "65"
+  },
+  {
+    "qInfo": {
+      "qId": "71c129a7-98e3-420e-bf22-3096d89113d1",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "32",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "32"
+  },
+  {
+    "qInfo": {
+      "qId": "724f1f4f-9cb4-46f2-95c0-2be5b1f47675",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "17",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "17"
+  },
+  {
+    "qInfo": {
+      "qId": "74063af5-370a-43c5-a4be-76ab3681df74",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "56",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "56"
+  },
+  {
+    "qInfo": {
+      "qId": "762f5827-ba21-4b85-b260-b75ab55184f8",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "39",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "39"
+  },
+  {
+    "qInfo": {
+      "qId": "79b104a6-1c36-46e4-aee4-c94e540ab5d4",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "89",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "89"
+  },
+  {
+    "qInfo": {
+      "qId": "7a988903-ea38-49e5-b4ae-25e956f26399",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "77",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "77"
+  },
+  {
+    "qInfo": {
+      "qId": "7b1a90d7-dc70-4585-be4b-872007802305",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "92",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "92"
+  },
+  {
+    "qInfo": {
+      "qId": "7c21da1e-ef22-40f8-a694-4a559c0859af",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "35",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "35"
+  },
+  {
+    "qInfo": {
+      "qId": "7e4707d8-5044-4391-9208-ea810993d266",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "22",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "22"
+  },
+  {
+    "qInfo": {
+      "qId": "804b3005-1cc5-450a-ac91-e2391198abc5",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "18",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "18"
+  },
+  {
+    "qInfo": {
+      "qId": "817965ca-d728-4c8a-a35f-3829ed656fb8",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "3",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "3"
+  },
+  {
+    "qInfo": {
+      "qId": "822ca374-ba3b-4461-88b3-23c346f6a121",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "10",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "10"
+  },
+  {
+    "qInfo": {
+      "qId": "89569a7a-18b4-45d6-8b79-948e65e19664",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "83",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "83"
+  },
+  {
+    "qInfo": {
+      "qId": "8b86a363-673d-427f-ace9-ad1de319d16c",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vArquivo",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "out 2020"
+  },
+  {
+    "qInfo": {
+      "qId": "8d8c8a01-0259-452e-a49e-29c0e793f810",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "69",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "69"
+  },
+  {
+    "qInfo": {
+      "qId": "8e9a2e60-5a13-4afd-b69c-eb1205e093a5",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "72",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "72"
+  },
+  {
+    "qInfo": {
+      "qId": "8ea8e8dd-f4fb-4e6d-9572-bbc58130b688",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "19",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "19"
+  },
+  {
+    "qInfo": {
+      "qId": "8f384e74-a0e3-4088-ac3f-44e16169fd04",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vBase",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "SAIDAS_FATURADAS"
+  },
+  {
+    "qInfo": {
+      "qId": "910753e6-7d46-4598-9b9f-e7e5cbc9ffbc",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vDataFim",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "31/10/2020"
+  },
+  {
+    "qInfo": {
+      "qId": "922ae724-4009-40c1-9cb5-b5693d2c0a4a",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "52",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "52"
+  },
+  {
+    "qInfo": {
+      "qId": "9232a24a-f3f5-413f-8d3e-b439484abba0",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "12",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "12"
+  },
+  {
+    "qInfo": {
+      "qId": "9398a9d3-fdf6-444e-b700-13dab887d58f",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "31",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "31"
+  },
+  {
+    "qInfo": {
+      "qId": "93a1c5c1-1ce3-4c56-a0dc-f031820b92e1",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "26",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "26"
+  },
+  {
+    "qInfo": {
+      "qId": "947072ee-4528-4bfc-b5a4-3454d54e1662",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "64",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "64"
+  },
+  {
+    "qInfo": {
+      "qId": "948dd330-5701-4ae2-b97e-80829e793c6b",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vCaminhoOrigem",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "0.Extract/PosicaoDiaria"
+  },
+  {
+    "qInfo": {
+      "qId": "9632f811-5a6f-4b37-a915-5f9c05c52ab2",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "87",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "87"
+  },
+  {
+    "qInfo": {
+      "qId": "970f63d1-2623-4157-bc63-3e370976c2b6",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vCaminhoExcelSql",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "[LIB://2.Arquivos/TI/Congelamento_Base.xlsx](ooxml, embedded labels, table is SQL)"
+  },
+  {
+    "qInfo": {
+      "qId": "97aa43e3-a273-45d1-9ba8-1c4509dbf008",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "85",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "85"
+  },
+  {
+    "qInfo": {
+      "qId": "97dd42fa-457a-46a8-98fd-8a275a063236",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "74",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "74"
+  },
+  {
+    "qInfo": {
+      "qId": "994709db-ed3d-4f8b-ad12-c886d83d3711",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "95",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "95"
+  },
+  {
+    "qInfo": {
+      "qId": "9960015b-99f9-4c14-bbf2-49bccbd51874",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "27",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "27"
+  },
+  {
+    "qInfo": {
+      "qId": "9fb92dd8-4640-4dfb-a8b2-ceee78367ba6",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "2",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "2"
+  },
+  {
+    "qInfo": {
       "qId": "a0a9794e-9d19-4cd4-83c2-fb3e9224d900",
       "qType": "variable"
     },
@@ -43,6 +1191,76 @@
   },
   {
     "qInfo": {
+      "qId": "a270b306-088a-4453-b876-f5794cf5acf3",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vGeracaoDataIteracao",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "DATE(TODAY(),'YYYYMMDD')"
+  },
+  {
+    "qInfo": {
+      "qId": "a3d8a718-acad-45b3-8f51-6f75d2403f38",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "15",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "15"
+  },
+  {
+    "qInfo": {
+      "qId": "a4eb9544-a5a0-42ae-83c0-bc6f9c0fa2fd",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempExecucao",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "00:00:06"
+  },
+  {
+    "qInfo": {
+      "qId": "a4ff10ad-7cd2-4533-bc18-4bc851bce2d9",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "29",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "29"
+  },
+  {
+    "qInfo": {
+      "qId": "ab709482-c8e8-41c4-a0c4-7acd81754896",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "90",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "90"
+  },
+  {
+    "qInfo": {
       "qId": "acce5c88-9cc9-4b38-b0d5-bbc99b170442",
       "qType": "variable"
     },
@@ -54,5 +1272,439 @@
       "qUseThou": 0
     },
     "qDefinition": "20200703"
+  },
+  {
+    "qInfo": {
+      "qId": "ae8d4d96-6390-4ff7-b401-ba38810ff3da",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "11",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "11"
+  },
+  {
+    "qInfo": {
+      "qId": "b0af933a-d75b-41e3-a742-a226f1f1f193",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vCaminho_destino",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "0.Extract/PosicaoDiaria"
+  },
+  {
+    "qInfo": {
+      "qId": "b31b26b6-48c0-4b75-9f46-3124e1fe6bee",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "55",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "55"
+  },
+  {
+    "qInfo": {
+      "qId": "b49e74f3-bfb9-4088-8011-9a6647f6b723",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "1",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "1"
+  },
+  {
+    "qInfo": {
+      "qId": "b4e1480a-4f35-41d4-9184-c9171cc274eb",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "36",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "36"
+  },
+  {
+    "qInfo": {
+      "qId": "b716e23a-3b88-4fe9-9899-3d5350fa7d69",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "16",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "16"
+  },
+  {
+    "qInfo": {
+      "qId": "bacae67b-d4f9-43a9-b41e-603f5d9734cd",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "73",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "73"
+  },
+  {
+    "qInfo": {
+      "qId": "bf29cc9c-de2e-492b-af23-6ba2d77b48c4",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "70",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "70"
+  },
+  {
+    "qInfo": {
+      "qId": "c14d744d-5709-4e2a-9a34-d15194d821d9",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "23",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "23"
+  },
+  {
+    "qInfo": {
+      "qId": "c7d76b69-b929-44b8-99cc-c9453ef1e8ab",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "96",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "96"
+  },
+  {
+    "qInfo": {
+      "qId": "cd7cb987-7252-4347-a7e5-d9d8c4d2ad34",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "38",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "38"
+  },
+  {
+    "qInfo": {
+      "qId": "d27525e3-3a4b-4af6-b182-644fd6081205",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vIterador",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "3"
+  },
+  {
+    "qInfo": {
+      "qId": "d4ce054f-c0bb-4b38-97a7-5a70a1e6ed61",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "9",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "9"
+  },
+  {
+    "qInfo": {
+      "qId": "d62ec1ad-453e-40e0-9f7a-bd6b072ea977",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "33",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "33"
+  },
+  {
+    "qInfo": {
+      "qId": "dcb53eb6-5749-490b-8564-d174d6f21f65",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "60",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "60"
+  },
+  {
+    "qInfo": {
+      "qId": "dcf81432-930c-405a-82a2-73867ceee07e",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "34",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "34"
+  },
+  {
+    "qInfo": {
+      "qId": "e1daec3a-961d-439c-97bc-9eaa26d2473c",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "57",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "57"
+  },
+  {
+    "qInfo": {
+      "qId": "e2511276-daed-45aa-9333-8ca05f073af7",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vDataIni",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "01/10/2020"
+  },
+  {
+    "qInfo": {
+      "qId": "e369a6c4-2cc5-4681-a6f7-3d6d80eb5e73",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "28",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "28"
+  },
+  {
+    "qInfo": {
+      "qId": "e613a779-01d7-492f-a1ce-3440f5b2c0c6",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vCaminhoExcelQvd",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "[LIB://2.Arquivos/TI/Congelamento_Base.xlsx](ooxml, embedded labels, table is QVD)"
+  },
+  {
+    "qInfo": {
+      "qId": "e8f7d8e3-b64a-4592-9fb4-dbdb0c5661df",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "14",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "14"
+  },
+  {
+    "qInfo": {
+      "qId": "eb50817e-9bce-4353-847d-1030c9123a9d",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "86",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "86"
+  },
+  {
+    "qInfo": {
+      "qId": "edf14975-f8ea-452d-ab3b-4fe7df225f55",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "37",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "37"
+  },
+  {
+    "qInfo": {
+      "qId": "ee8ed912-34b7-4ca4-9162-3c32789f8bf4",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vData_iteracao",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "20201028"
+  },
+  {
+    "qInfo": {
+      "qId": "f0930347-406f-4f1e-aa53-d107812c9e49",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "61",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "61"
+  },
+  {
+    "qInfo": {
+      "qId": "f0c55a96-297a-46bc-8975-ea384cd1546e",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "51",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "51"
+  },
+  {
+    "qInfo": {
+      "qId": "f2cde996-5e8e-4ad9-b96e-927d2850b07e",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "46",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "46"
+  },
+  {
+    "qInfo": {
+      "qId": "fa495e4d-bd02-4780-b023-b79726320f6f",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "47",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "47"
+  },
+  {
+    "qInfo": {
+      "qId": "fe3d786f-6ea2-485e-8df2-99ae80aac5b5",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "53",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "53"
+  },
+  {
+    "qInfo": {
+      "qId": "ff10abdc-9a1f-48a8-a74d-35290d9bb312",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "93",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "93"
+  },
+  {
+    "qInfo": {
+      "qId": "ffde41d6-a3af-4c88-b504-56ce771b610d",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "94",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "94"
   }
 ]
