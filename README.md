@@ -15,3 +15,4 @@ Minha nova pasta|
 Branch Name|Qlik application
 ---|---
 main|[https://bi.ruralbrasil.com/sense/app/ad952d39-018e-47dc-b709-aff8be5bec09](https://bi.ruralbrasil.com/sense/app/ad952d39-018e-47dc-b709-aff8be5bec09)
+extract|[https://bi.ruralbrasil.com/sense/app/81a05108-7cc4-46ef-83b2-14144e1e7fca](https://bi.ruralbrasil.com/sense/app/81a05108-7cc4-46ef-83b2-14144e1e7fca)
