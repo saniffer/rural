@@ -1,0 +1,21 @@
+///$tab 8 - Orçamento
+FatOrcamento:
+LOAD
+	*,
+    	RowNo()												as	%LinkOrcamento,
+    num(num#(ApplyMap('MapFilialEmCodFilial',Capitalize(Filial),null())))	AS	CodUnidade
+;
+LOAD
+    Diretoria,
+  	MapSubString('RemoveAcento_Map',UPPER(Regional))	as	Regional,
+  	Replace(MapSubString('RemoveAcento_Map',UPPER(Filial)),'PARAISO','PARAISO TO')		as	Filial,
+    Orçamento*1000000				AS	ValorOrcamento,
+	Grupo							AS	GrupoProduto,
+    MakeDate(Ano)					AS	DataEmissao,
+    UPPER([Grupo Segmentado])		AS	GrupoProdutoSegmentado,
+    UPPER([Grupo Pegada])			AS	GrupoProdutoPegada
+From
+	[lib://2.Arquivos/Orcamentos/Orçamento Rural.xlsx]
+(ooxml, embedded labels, table is [Orcamento]);
+
+CALL subGeraQVD ('FatOrcamento','',1);

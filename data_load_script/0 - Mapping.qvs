@@ -1,0 +1,819 @@
+///$tab 0 - Mapping
+RemoveAcento_Map:
+Mapping
+LOAD * INLINE [
+F1, F2
+Š, S
+š, s
+Ž, Z
+ž, z
+À, A
+Á, A
+Â, A
+Ã, A
+Ä, A
+Å, A
+Æ, A
+Ç, C
+È, E
+É, E
+Ê, E
+Ë, E
+Ì, I
+Í, I
+Î, I
+Ï, I
+Ñ, N
+Ò, O
+Ó, O
+Ô, O
+Õ, O
+Ö, O
+Ø, O
+Ù, U
+Ú, U
+Û, U
+Ü, U
+Ý, Y
+Þ, B
+ß, B
+à, a
+á, a
+â, a
+ã, a
+ä, a
+å, a
+æ, a
+ç, c
+è, e
+é, e
+ê, e
+ë, e
+ì, i
+í, i
+î, i
+ï, i
+ð, o
+ñ, n
+ò, o
+ó, o
+ô, o
+õ, o
+ö, o
+ø, o
+ù, u
+ú, u
+û, u
+ý, y
+ý, y
+þ, b
+ÿ, y
+',
+];
+
+MapAgrupadorEspecialidades:
+MAPPING
+LOAD
+    Cód,
+    AGRUPADOR
+FROM [lib://2.Arquivos/Cad_SKU.xlsx](ooxml, embedded labels, table is Cad_SKU);
+//FROM [lib://2.Arquivos/LongShort/ESPECIALIDADES.xlsx](ooxml, embedded labels, table is PRODUTO);
+
+
+MapAgrupadorCampanhaBayer:
+MAPPING
+LOAD
+    CodProdutosCampanha,
+    ProdutoCampanha
+FROM 
+	[lib://1.Transform/CampanhaBayer2021/TabAgrupadorCampanhaBayer2020.qvd]
+(qvd);
+
+
+MapDiretoriaCampanhaBayer:
+MAPPING
+LOAD
+	$(vTransformacaoDeTexto(Regional)),
+    Diretoria
+FROM [lib://2.Arquivos/Campanha Bayer 2020 - 2021/Configuracao_Campanha_Bayer.xlsx]
+(ooxml, embedded labels, table is Diretoria);
+
+
+
+
+MapCodProdutoMarcaProduto:
+MAPPING
+LOAD	DISTINCT
+    NUM(NUM#(CODI_PSV))	AS	CodProdutoSiagri,
+    MARC_PRO			AS	Marca
+FROM
+	[lib://0.Extract/Siagri/produto.qvd]
+(qvd);
+
+MapCpfCNPJCliente:
+MAPPING
+LOAD
+    num(num#(CODI_TRA)),
+    CGC_TRA
+FROM
+	[lib://0.Extract/Siagri/TRANSAC.qvd]
+(qvd);
+
+
+MapMarcaProduto:
+MAPPING
+LOAD	DISTINCT
+    NUM(NUM#(CODI_PSV)),
+    MARC_PRO
+FROM
+	[lib://0.Extract/Siagri/produto.qvd]
+(qvd);
+
+
+MapRegiaoCorteva:
+MAPPING
+LOAD
+	TRIM(UPPER(Regional)),
+    Regiao
+FROM [lib://2.Arquivos/Campanha Corteva 2020 - 2021/Configuracao_Campanha.xlsx]
+(ooxml, embedded labels, table is [Separacao Regiao]);
+
+
+MapCodProdutosCorteva:
+MAPPING
+LOAD	DISTINCT
+	HASH128(num(num#(CODIGO)),Regiao),	
+	AGRUPADOR
+FROM
+	[lib://2.Arquivos/Campanha Corteva 2020 - 2021/Configuracao_Campanha.xlsx]
+(ooxml, embedded labels, table is [Agrupador Produtos]);
+
+
+
+
+MapDim_ContasContabeis:
+MAPPING
+LOAD
+    Hash128(CODI_PLC,CODI_CPC) AS MapLinkContas,
+    DESC_CPC
+  
+FROM [lib://0.Extract/Siagri/CONTASPL.qvd]
+(qvd);
+
+MapDim_HistoricoContabil:
+MAPPING
+LOAD
+    HIST_HIS,
+    DESC_HIS
+   
+FROM [lib://0.Extract/Siagri/HISTORICO.qvd]
+(qvd);
+
+MapDim_UserLancContabil:
+Mapping
+LOAD
+    CODI_PES,
+    NOME_PES
+   
+FROM [lib://0.Extract/Siagri/PESSOAL.qvd]
+(qvd);
+
+MapSubGrupoMarketing:
+MAPPING
+LOAD
+    $(vTransformacaoDeTexto("Atual SIAGRI2"))	as	link,
+   	Proposta2
+FROM 
+	[lib://2.Arquivos/Marketing/Segmentação adoção.xlsx]
+(ooxml, embedded labels, table is [Grupo e Subgrupo]);
+
+
+MapClassificacaoProdutoEspecialidades:
+MAPPING
+LOAD	DISTINCT
+	text(Cód),
+    AGRUPADOR
+FROM
+	[lib://2.Arquivos/Marketing/CAD SKU - DEF PORTFOLIO.xlsx](ooxml, embedded labels, table is Cad_SKU_Loja)
+WHERE
+	Classificação <> 'Inativo'
+;
+
+MapSubGrupoSiagri:	MAPPING	LOAD	CODI_SBG,	DESC_SBG	AS	SubGrupoProduto	FROM	[lib://0.Extract/DW/SUBGRUPO.qvd](qvd);
+
+MapAgrupadorFornecedor:
+MAPPING
+LOAD
+    trim(upper(Fornecedor)),
+    Agrupador
+FROM [lib://2.Arquivos/Marketing/agrupador fornecedor.xlsx]
+(ooxml, embedded labels, table is Sheet1);
+
+
+MapCodProdutoFornecedor:
+MAPPING
+LOAD
+    NUM(NUM#(Cód))	AS	CodProduto,
+    //Os dois agrupadores abaixos devem contar com a marca.
+    FORNECEDOR
+FROM 
+	[lib://2.Arquivos/Cad_SKU.xlsx]
+(ooxml, embedded labels, table is Cad_SKU_Loja);
+
+
+
+MapAgrupadorProduto:
+MAPPING
+LOAD
+    NUM(NUM#(Cód))	AS	CodProduto,
+    //Os dois agrupadores abaixos devem contar com a marca.
+     IF(Match(AGRUPADOR,'MAP PURIFICADO','ACIDO BORICO'),AGRUPADOR&' '&SubField(FORNECEDOR,' ',1),AGRUPADOR)		as	Agrupador
+FROM 
+	[lib://2.Arquivos/Cad_SKU.xlsx]
+(ooxml, embedded labels, table is Cad_SKU_Loja);
+
+MapAgrupadorProduto:
+MAPPING
+LOAD
+	NUM(NUM#(CodProdutoSiagri))	AS	CodProduto,
+    'GEODATA'				AS	Agrupador
+FROM
+	[lib://1.Transform/CloverCRM/TabProduto.qvd](qvd)
+WHERE
+	SubGrupoProduto='PRESTACAO DE SERVIÇOS'
+;
+
+
+
+
+
+
+
+
+
+MapPrincipioAtivo:
+MAPPING
+LOAD
+    NUM(NUM#(Cód)),
+    ATIVO
+FROM 
+	[lib://2.Arquivos/Marketing/Agrupador_Produtos.xlsx](ooxml, embedded labels, table is Planilha1)
+WHERE
+	NOT ISNULL(ATIVO)
+;
+
+
+
+MapAtendimentoPedidoVenda:MAPPING	LOAD	idatendimento,	'PEDIDO VENDA'	FROM	[lib://0.Extract/CloverCRM/pedidovenda.qvd](qvd);
+
+MapDataEmissaoNotaEntrada:
+MAPPING
+LOAD
+	HASH128(CODI_EMP,NUME_NFE,DATE(floor(DREC_NFE))),
+	DATE(FLOOR(DEMI_NFE))
+FROM 
+	[lib://0.Extract/DW/NFENTRA.QVD](qvd)
+;
+
+MapLocalFilialCRM:
+MAPPING
+LOAD
+    idlocal,
+    REPLACE(Capitalize(MapSubString('RemoveAcento_Map',trim(replace(TextBetween(descricao,' - ',''),' A','')))),'Paraiso','Paraiso To')
+FROM
+	[lib://0.Extract/CloverCRM/local.qvd]
+(qvd);
+
+MapUnidadeMedida:
+MAPPING
+LOAD
+    idunidadedemedida,
+    descricao
+FROM 
+	[LIB://0.Extract/CloverCRM/unidadedemedida.qvd]
+(qvd);
+
+MapUsuario:
+MAPPING
+LOAD
+    idusuario,
+    nome
+FROM [LIB://0.Extract/CloverCRM/usuario.qvd]
+(qvd);
+
+MapParceiro:
+MAPPING
+LOAD
+	idparceiro,
+    nome
+FROM [LIB://0.Extract/CloverCRM/parceiro.qvd](qvd);
+
+MapTipoAtendimento:
+MAPPING
+LOAD
+    idtipodeatendimento,
+    descricao
+FROM [lib://0.Extract/CloverCRM/tipodeatendimento.qvd]
+(qvd);
+
+
+
+MapIdSafra:
+MAPPING
+LOAD
+    idatendimento,
+    idsafra				
+FROM 
+	[lib://0.Extract/CloverCRM/servicoatendimento.qvd]
+(qvd);
+
+
+
+
+MapProdutoClasse:
+MAPPING
+LOAD
+    idclassedeproduto,
+    descricao
+FROM
+	[lib://0.Extract/CloverCRM/classedeproduto.qvd]
+(qvd);
+
+tempMapTipoProduto:
+LOAD
+	idproduto,
+    codigo	AS	CodProduto
+
+FROM [lib://0.Extract/CloverCRM/produto.qvd]
+(qvd);
+
+//Utilizando o grupo de produto do DW
+LEFT JOIN(tempMapTipoProduto)
+LOAD
+    CODI_PSV		AS	CodProduto,
+    CODI_SBG,
+    CODI_GPR
+FROM [lib://0.Extract/DW/PRODSERV.qvd]
+(qvd);
+LEFT JOIN(tempMapTipoProduto)
+LOAD
+	CODI_SBG,
+    CODI_GPR,
+    DESC_SBG
+FROM [lib://0.Extract/DW/SUBGRUPO.qvd]
+(qvd);
+LEFT JOIN(tempMapTipoProduto)
+LOAD
+    CODI_GPR,
+    DESC_GPR	AS	GrupoProduto
+FROM [lib://0.Extract/DW/GRUPO.qvd]
+(qvd);
+
+MapTipoProduto:
+MAPPING
+LOAD
+	idproduto,
+    GrupoProduto
+RESIDENT
+	tempMapTipoProduto
+;
+
+DROP TABLE tempMapTipoProduto;
+
+MapNomePropriedade:
+MAPPING
+LOAD
+    idpropriedade,
+    descricao
+FROM 
+	[lib://0.Extract/CloverCRM/propriedade.qvd]
+(qvd);
+
+MapNomeProduto:
+MAPPING
+LOAD
+    idproduto,
+    descricao
+FROM 
+	[lib://0.Extract/CloverCRM/produto.qvd]
+(qvd);
+
+
+MapNomeCidade:
+MAPPING
+LOAD
+    idcidade											AS	IdCidade,
+    upper(MapSubString('RemoveAcento_Map',descricao))	AS	Cidade
+FROM
+	[LIB://0.Extract/CloverCRM/cidade.qvd]
+(qvd);
+
+
+
+MapIdLocalemIdCidade:
+MAPPING
+LOAD
+    idlocal										AS	IdLocal,
+    ApplyMap('MapNomeCidade',idcidade,null())	AS	IdCidade
+FROM 
+	[LIB://0.Extract/CloverCRM/local.qvd](qvd)
+WHERE
+	ativo=1;
+    
+    
+MapCultura:
+MAPPING
+LOAD
+    idcultura,
+    descricao
+FROM [lib://0.Extract/CloverCRM/cultura.qvd]
+(qvd);
+    
+MapIdSafraEmCultura:
+MAPPING
+LOAD
+    idsafra,
+    ApplyMap('MapCultura',idcultura,null())
+FROM 
+	[LIB://0.Extract/CloverCRM/safra.qvd]
+(qvd);
+
+
+MapStatusPedido:
+MAPPING
+LOAD
+*
+INLINE
+[
+CodStatusPedido,Status
+0,Nao Liberado Comercial
+1,Liberado Comercial
+2,Nao Liberado Financeiro'
+3,Liberado Financeiro
+4,Nao Liberado Assinatura
+5,Liberado Assinatura
+6,Nao Liberado Logistica
+7,Liberado Logistica
+8,Venda Perdida Integral
+9,Confirmado Integral
+10,Confirmado Parcial
+11,Cancelado
+];
+
+MapSituacaoPedido:
+MAPPING
+LOAD
+*
+INLINE
+[
+CodSituacaoPedido,Situacao
+0,'NÃO LIBERADO'
+1,'LIBERADO'
+5,'CONFIRMADO'
+9,'CANCELADO'
+];
+
+MapTipoPedido:
+MAPPING
+LOAD
+*
+INLINE
+[
+CodTipoPedido,TipoPedido
+1,Normal
+2,Barter
+];
+
+// MapFlagPedidosLiberados:
+// MAPPING
+// LOAD	DISTINCT
+// 	HASH128(text(CODI_EMP),text(PEDI_PED),text(SERI_PED)),
+//    	DUAL('SIM',1)
+// FROM 
+// 	[lib://0.Extract/Siagri/TB_PEDIDOS_LIMITE_EXCEDIDO.qvd]
+// (qvd);
+
+MapFlagPedidosLiberados:
+MAPPING
+LOAD	DISTINCT
+	HASH128(text(CODI_EMP),text(PEDI_PED),text(SERI_PED)),
+   	DUAL('SIM',1)
+FROM 
+	[lib://1.Transform/Siagri/TB_PEDIDOS_LIMITE_EXCEDIDO_SIAGRI.qvd] //TB_PEDIDOS_LIMITE_EXCEDIDO
+(qvd);
+
+MapDataInsercaoPedidoCompra:
+MAPPING
+LOAD	DISTINCT
+    Hash128(CODI_EMP,NUME_PEC),
+    DINSERT
+FROM
+	[lib://0.Extract/DW/PEDCOM.qvd]
+(qvd);
+
+MapFlagPedidoCompra:
+MAPPING
+LOAD	DISTINCT
+    Hash128(CODI_EMP,NUME_PEC,CODI_PSV),
+    1
+FROM
+	[lib://0.Extract/DW/IPEDCOM.qvd]
+(qvd);
+//Apply Feito para levar a data de insercao do pedido de compra para o cabecalho da nota
+MapDataInsercaoPedidoCompraCabecalho:
+MAPPING
+LOAD
+	HASH128(CODI_EMP,NUME_NFE,DATE(floor(DREC_NFE))),
+    DATE(FLOOR(ApplyMap('MapDataInsercaoPedidoCompra',Hash128(EMPR_PEC,NUME_PEC),NULL())))
+FROM
+	[lib://0.Extract/DW/INFENTRA.qvd](qvd)
+;
+
+//Map realizado para identificar os CFOP's de pedidos de compra.
+MapCFOPSDeCompra:
+MAPPING
+LOAD
+    text(CFOP),
+    1
+FROM [lib://2.Arquivos/Compras/CFOP's de compra.xlsx]
+(ooxml, embedded labels, table is [CFOP's de compra]);
+
+
+
+//Map criado para identificar as notas com pedido de compra
+MapPedidoComNotaCompra:
+MAPPING
+LOAD
+    CODI_TOP,
+	1
+FROM 
+	[lib://0.Extract/Siagri/TOPCTRL.QVD](qvd)
+WHERE
+	(CODI_CTR = 2 AND PDCO_TCT = 'A')
+;
+
+
+
+MapCFOPReceita:
+MAPPING
+LOAD
+	CFOP,
+    1
+INLINE 
+[
+CFOP
+1202
+1504
+2201
+2202
+2504
+5101
+5102
+5106
+5114
+5115
+5117
+5119
+5120
+5502
+5933
+6102
+6106
+6114
+6115
+6117
+6119
+6120
+6502
+6933
+];
+
+MapCFOPZeraCMV:
+MAPPING
+LOAD
+	cfop,
+    1
+INLINE
+[
+cfop
+510210
+510215
+510225
+510226
+510613
+511410
+511710
+511912
+512014
+550212
+550215
+610210
+610225
+611410
+611710
+611912
+650212
+510231
+];
+
+
+MapSubGrupoSimulador:
+MAPPING
+LOAD
+    upper("Sub Grupo"),
+    "Sub Grupo 2 Simulador"
+FROM [lib://2.Arquivos/Controladoria/Planilhas Configuracao Simulador.xlsx]
+(ooxml, embedded labels, table is DeparaGrupoProdutos_2);
+
+MapCodSubGrupoSubGrupo:
+MAPPING
+LOAD
+    CODI_SBG	AS	CodSubGrupoProduto,
+    aPPLYmAP('MapSubGrupoSimulador',DESC_SBG,NULL())	AS	SubGrupoProduto
+FROM
+	[lib://0.Extract/DW/SUBGRUPO.qvd]
+(qvd);
+
+MapCOdProdutoSubGrupoSimulador:
+MAPPING
+LOAD
+    NUM(NUM#(CODI_PSV))	AS	CodProduto,
+    ApplyMap('MapCodSubGrupoSubGrupo',CODI_SBG)	AS	CodSubGrupoProduto
+FROM 	
+	[lib://0.Extract/DW/PRODSERV.qvd]
+(qvd);
+
+
+
+MapEmpresaCRM_Siagri:
+MAPPING
+LOAD
+    TEXT(TextBetween(chaveerp,'#','')),
+    MapSubString('RemoveAcento_Map',Regional)
+FROM 
+	[lib://1.Transform/CloverCRM/EmpresaCRM.qvd]
+(qvd);
+
+MapEmpresaCRM:
+MAPPING
+LOAD
+    chaveerp,
+    MapSubString('RemoveAcento_Map',Regional)
+FROM [lib://1.Transform/CloverCRM/EmpresaCRM.qvd]
+(qvd);
+
+MapCulturaSiagri:
+MAPPING
+LOAD
+    CODI_CUL,
+    IF(WildMatch(NOME_CUL,'*SOJA*'),'SOJA',
+    IF(WildMatch(NOME_CUL,'*MILHO*'),'MILHO',NOME_CUL))
+FROM 
+	[lib://0.Extract/Siagri/CULTURA.qvd]
+(qvd);
+
+//Map criado para setar a cultura no CODI_CUL
+MapItemPedidoCulturaSiagri:
+MAPPING
+LOAD
+	HASH128(num(num#(PEDI_PED)),	num(num#(SERI_PED)),	num(num#(CODI_EMP)),	num(num#(CODI_PSV))),
+    ApplyMap('MapCulturaSiagri',CODI_CUL,NULL())
+    
+FROM [lib://0.Extract/Siagri/IPEDIDO.qvd]
+(qvd);
+
+MapFilialCRM:
+mapping
+LOAD
+    idfilial,
+    upper(ApplyMap('MapLocalFilialCRM',idlocal,null()))
+FROM 
+	[LIB://0.Extract/CloverCRM/filial.qvd]
+(qvd);
+
+MapRegionalCRM:
+mapping
+LOAD
+    IdFilial,
+    UPPER(MapSubString('RemoveAcento_Map',Regional))
+FROM 
+	[lib://1.Transform/CloverCRM/EmpresaCRM.qvd]
+(qvd);
+
+MapIdLocalToCliente:
+MAPPING
+LOAD
+    idlocalpadrao,
+    nome			
+FROM 
+	[LIB://0.Extract/CloverCRM/parceiro.qvd](qvd)
+WHERE
+	ativo =1;
+  //Geração de todas datas, para que não fiquem datas sem valor de cotação.
+TabCalendario:
+LOAD
+	Date(MenorData + IterNo()-1)	as	DataCotacao,
+    RANGE,
+    MenorData
+WHILE
+	iterno()-1 <= RANGE
+;
+LOAD
+	MAX(FLOOR(DATA_VLR)) -  MIN(FLOOR(DATA_VLR))	as	RANGE,
+    MIN(FLOOR(DATA_VLR))	AS	MenorData
+
+FROM 
+	[lib://0.Extract/Siagri/NEGOCIACAO.qvd]
+(qvd);
+
+LEFT JOIN
+LOAD DISTINCT
+    DATE(FLOOR(DATA_VLR)) AS DataCotacao,
+    VCOT_NEG
+FROM 
+	[lib://0.Extract/Siagri/NEGOCIACAO.qvd]
+(qvd);
+
+
+TabCotacaoDolar:
+MAPPING
+LOAD
+	DataCotacao,
+    //Caso a data não tenha valor de cotação, utilizar o do registro anterior
+    IF(ISNULL(VCOT_NEG),peek('ValorDolar'),VCOT_NEG)	AS	ValorDolar
+RESIDENT
+	TabCalendario
+ORDER BY
+	DataCotacao
+ASC
+  
+;
+
+DROP TABLE TabCalendario;
+
+
+MapRegionalDiretoria:
+MAPPING
+LOAD
+	*
+INLINE [
+Regional,DIRETORIA
+REG CANARANA,Diretoria Oeste
+REG JATAÍ,Diretoria Leste
+REG PARAGOMINAS,Diretoria Oeste
+REG PRIMAVERA,Diretoria Oeste
+REG QUERÊNCIA,Diretoria Oeste
+REG REDENÇÃO,Diretoria Leste
+REG RIO VERDE,Diretoria Leste
+];
+
+MapEmpresaCRMFilial_Siagri:
+MAPPING
+LOAD
+    TEXT(TextBetween(chaveerp,'#','')),
+    PurgeChar(MapSubString('RemoveAcento_Map',Filial),'-')
+FROM 
+	[lib://1.Transform/CloverCRM/EmpresaCRM.qvd]
+(qvd);
+
+MapFilialEmCodFilial:
+MAPPING
+LOAD
+    PurgeChar(MapSubString('RemoveAcento_Map',Filial),'-'),
+    TEXT(TextBetween(chaveerp,'#',''))
+FROM 
+	[lib://1.Transform/CloverCRM/EmpresaCRM.qvd]
+(qvd);
+
+  
+//Map criado para utilizar 
+MapVinculoParceiro:
+MAPPING
+LOAD DISTINCT
+    Vinculo,
+	Parceiro
+FROM [lib://1.Transform/Siagri/TabVinculo.qvd]
+(qvd);
+
+
+//Map criado para transformar os subgrupos em grupos.
+MapSubGrupoSegmentado:
+MAPPING
+LOAD
+*
+INLINE [
+SubGrupoOrigem,SubGrupoSegmentado
+SOJA,SOJA
+MILHO,MILHO
+FOLIARES,FOLIARES
+FEIJÃO,OUTROS
+ALGODAO,OUTROS
+SORGO,OUTROS
+OUTROS,OUTROS
+PRETACAO DE SERVIÇOS,OUTROS
+FUNGICIDAS MICROBIOLOGICO,OUTROS
+INSETICIDAS MICROBIOLOGICO,OUTROS
+ARMADILHA,OUTROS
+INOCULANTES,OUTROS
+GERAL,OUTROS
+];

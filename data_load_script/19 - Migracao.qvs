@@ -1,0 +1,431 @@
+///$tab 19 - Migracao
+//MIGRAÇÃO TABLEAU
+
+TabMargemSemanalResumo:
+LOAD
+    NUMEROPEDIDO,
+    Date(DATAEMISSAO)   as DATAEMISSAO,
+    CLIENTEERP,
+    DESCRICAOTIPOPEDIDO,
+    DIRETORIANOME,
+    REGIONALNOME,
+    FILIALNOME,
+    GRUPOPRODUTONOME,
+    SUBGRUPOPRODUTONOME,
+    CICLONOME,
+    RECEITA,
+    CMV,
+    MARGEM,
+    MARGEMPERCENTUAL,
+    RANGEMARGEM
+FROM [lib://0.Extract/DW/VW_BI_MARGEMSEMANAL_RESUMO.qvd]
+(qvd);
+
+Store TabMargemSemanalResumo into 'lib://1.Transform/DW/VW_BI_MARGEMSEMANAL_RESUMO.qvd'(qvd);
+drop Tables TabMargemSemanalResumo;
+
+
+TabMargemSemanal:
+LOAD
+    NUMEROPEDIDO,
+    Date(DATAEMISSAO)   as DATAEMISSAO,
+    CLIENTEERP,
+    DESCRICAOTIPOPEDIDO,
+    DIRETORIANOME,
+    REGIONALNOME,
+    FILIALNOME,
+    GRUPOPRODUTONOME,
+    SUBGRUPOPRODUTONOME,
+    CICLONOME,
+    RECEITA         as Receita,
+    (RECEITA - CMV) as Margem,
+    CMV,
+    TIPO,
+    DATAATUALIZACAO,
+    DATAVENCIMENTO,
+    UNIDADEERP,
+    VENDEDORNOME,
+    CLIENTENOME,
+    PRODUTOERP,
+    PRODUTONOME,
+    GRUPONOME,
+    SUBGRUPONOME,
+    GRUPOPRODUTOID,
+    SUBGRUPOID,
+    QUANTIDADE,
+    VALORUNITARIO,
+    CUSTOTABELA,
+    TIPOPRAZO
+FROM [lib://0.Extract/DW/VW_BI_MARGEMSEMANAL_ORIGINAL.qvd]
+(qvd);
+
+Store TabMargemSemanal into 'lib://1.Transform/DW/VW_BI_MARGEMSEMANAL_ORIGINAL.qvd'(qvd);
+drop Tables TabMargemSemanal;
+
+TabFato:
+
+Load *,
+	Year(DTEMISSAO) as AnoEmissao,
+    Month(DTEMISSAO) as MêsEmissao,
+    Day(DTEMISSAO)    as DiaEmissao;
+
+   
+LOAD
+    FATURAID,
+    NUMEROFATURA,
+    ITEMFATURA,
+    SERIEFATURAMENTO,
+    TIPOFATURA,
+    DESCRICAOFATURA,
+    CLIENTEERP,
+    NOMECLIENTE,
+    VINCULOERP,
+    NOMEVINCULO,
+    FILIALERP,
+    REPFILIALERP,
+    NOMEREPRESENTANTE,
+    Date(DTEMISSAO,'DD-MM-YYYY')	as DTEMISSAO,
+    ORDEMVENDA,
+    ITEMORDEM,
+    MATERIALERP,
+    MARCAERP,
+    DESCRICAOMATERIAL,
+    GRUPOPRODUTOERP,
+    DESCRICAOGRUPO,
+    SUBGRUPOERP,
+    DESCRICAOSUBGRUPO,
+    CICLOERP,
+    DESCRICAOCICLO,
+    CFOP,
+    NFE,
+    DOCUMENTO,
+    SITUACAONFE,
+    DESCRICAOSITUACAONFE,
+    UNIDADECOMERCIAL,
+    MUNPAIERP,
+    MUNICIPIOERP,
+    UFERP,
+    CLIENTEID,
+    PRODUTOID,
+    REGIONALID,
+    FILIALID,
+    REPRESENTANTEID,
+    MARCAID,
+    CFOPID,
+    DESCRICAOFILIAL,
+    NOMEMUNICIPIO,
+    Date(DATAATUALIZACAO,'DD-MM-YYYY')			as DATAATUALIZACAO,
+    REPRESENTANTEERP,
+    TIPOCFOPDESCRICAO,
+    GRUPOPRODUTOID,
+    GRUPOPRODUTONOME,
+    SUBGRUPOID,
+    SUBGRUPONOME,
+    FILIALGERENCIAL,
+    FILIALNOME,
+    REGIONALNOME,
+    BASE,
+    TIPO,
+    VALOR,
+    VALORREAL
+FROM [lib://0.Extract/DW/VW_BI_PERFORMANCELOJA.qvd]
+(qvd)
+where Match(SUBGRUPONOME,'DESCONTOS','ESPECIALIDADES','FUNGICIDAS','GERAL','HERBICIDAS','INSETICIDAS','MILHO','NÃO PREMIUM','OUTROS','PERDA ESTOQUE','PREMIUM','SOJA');
+
+Store TabFato into 'lib://1.Transform/DW/VW_BI_PERFORMANCELOJA.qvd'(qvd);
+
+/////////////////////
+
+VW_BI_ReceitaSemanal:
+Load
+	*,
+    Num(Num#(if(MesEmissao = MesAtualizacao and(DiaEmissao <= DiaAtualizacao), ReceitaLiquida,
+    	if(MesEmissao < MesAtualizacao, ReceitaLiquida
+    )))) as ReceitaLiquidaYTD,
+    
+    Num(Num#(if(MesEmissao = MesAtualizacao and(DiaEmissao  <= DiaAtualizacao), ReceitaLiquida,
+    	if(Tipo = 'Orçamento' and(MesEmissao = MesAtualizacao), ReceitaLiquida
+    )))) as ReceitaLiquidaMes
+
+;
+Load
+	*,
+    if(Tipo = 'Orçamento' and(Periodo = 'Anterior') and(TipoCFOP = 'RECEITA'), (ValorLiquido * QuantidadeReal),
+    	if(Tipo = 'Oficial', ValorLiquido,
+        	if(TipoCFOP = 'RECEITA', (ValorLiquido * QuantidadeReal),
+            	if(Tipo = 'Orçamento' and(Periodo <> 'Anterior'), ValorLiquido
+    )))) as ReceitaLiquida,
+    
+    if(Tipo = 'Receita' or(Tipo = 'Oficial'), AnoEmissao, 'Orç.') as Ano
+    
+;
+LOAD
+    FATURAID						as FaturaID,
+    NUMEROFATURA					as FaturaNumero,
+    ITEMFATURA						as FaturaItem,
+    SERIEFATURAMENTO				as FaturamentoSerie,
+    TIPOFATURA						as FaturaTipo,
+    DESCRICAOFATURA					as Fatura,
+    CLIENTEERP						as CodCliente,
+    NOMECLIENTE						as Cliente,
+    VINCULOERP						as CodVinculo,
+    NOMEVINCULO						as Vinculo,
+    FILIALERP						as CodFilial,
+    REPFILIALERP					as CodRepFilial,
+    NOMEREPRESENTANTE				as Representate,
+    Date(Floor(DTEMISSAO))			as DataEmissao,
+    Year(DTEMISSAO)					as AnoEmissao,
+    Month(DTEMISSAO)				as MesEmissao,
+    Day(DTEMISSAO)					as DiaEmissao,
+    ORDEMVENDA						as OrdemVenda,
+    ITEMORDEM						as ItemOrdem,
+    MATERIALERP						as CodMaterial,
+    MARCAERP						as CodMarca,
+    DESCRICAOMATERIAL				as Material,
+    GRUPOPRODUTOERP					as CodGrupoProduto,
+    DESCRICAOGRUPO					as Grupo,
+    SUBGRUPOERP						as CodSubGrupo,
+    DESCRICAOSUBGRUPO				as SubGrupoDescricao,
+    CICLOERP						as CodCiclo,
+    DESCRICAOCICLO					as Ciclo,
+    CFOP							as CFOP,    
+    NFE								as NFE,
+    DOCUMENTO						as Documento,
+    SITUACAONFE						as CodSituacaoNFE,
+    DESCRICAOSITUACAONFE			as SituacaoNFE,
+    UNIDADECOMERCIAL				as UnidadeComercial,
+    QUANTIDADE						as Quantidade,
+    if(CFOP  > 500000, QUANTIDADE,
+    	(QUANTIDADE * -1)) 			as QuantidadeReal,
+    VALORLIQUIDO					as ValorLiquido,
+    CUSTOMEDIO						as CustoMedio,
+    VALORACRESCIMO					as ValorAcrescimo,
+    CUSTOTABELA						as CustoTabela,
+    VALORICMS						as ValorICMS,
+    PRECOVENDA						as PrecoVenda,
+    INDEXADORERP					as CodIndexador,
+    Date(Floor(DATAINDEXADOR))		as DataIndexador,
+    VALORINDEXADOR					as ValorIndexador,
+    MUNPAIERP						as CodNumPai,
+    MUNICIPIOERP					as CodMunicipio,
+    UFERP							as CodUF,
+    CLIENTEID						as ClienteID,
+    PRODUTOID						as ProdutoID,
+    INDEXADORID						as IndexadorID,
+    REGIONALID						as RegionalID,
+    FILIALID						as FilialID,
+    REPRESENTANTEID					as RepresentanteID,
+    MARCAID							as MarcaID,
+    CFOPID							as CFOPID,
+    DESCRICAOFILIAL					as Filial,
+    NOMEMUNICIPIO					as Municipio,
+    Date(Floor(DATAATUALIZACAO)) 	as DataAtualizacao,
+    Year(DATAATUALIZACAO)			as AnoAtualizacao,
+    Month(DATAATUALIZACAO)			as MesAtualizacao,
+    Day(DATAATUALIZACAO)			as DiaAtualizacao,
+    REPRESENTANTEERP				as CodRepresentante,
+    TIPOCFOPDESCRICAO				as TipoCFOP,
+    REGIONALNOME					as Regional,
+    FILIALGERENCIAL					as FilialGerencial,
+    GRUPOPRODUTOID					as GrupoProdutoID,
+    GRUPOPRODUTONOME				as GrupoProduto,
+    SUBGRUPOID						as SubGrupoID,
+    SUBGRUPONOME					as SubGrupo,
+    TIPO							as Tipo,
+    PERIODO							as Periodo
+FROM [lib://0.Extract/Migracao/VW_BI_ReceitaSemanal.qvd](qvd);
+
+Store VW_BI_ReceitaSemanal INTO [lib://1.Transform/Migracao/VW_BI_ReceitaSemanal.qvd](qvd);
+
+Drop Table VW_BI_ReceitaSemanal;
+
+/////////////////////////////
+
+TabelaPreco:
+Load
+	*,
+    CodTabela&' - '&NomeTabela 		as TabelaFiltro,
+    CodProduto&' - '&NomeProduto 	as ProdutoFiltro,
+    CodGrupo&' - '&NomeGrupo		as GrupoProduto,
+    CodSubGrupo&' - '&NomeSubGrupo	as SubGrupoFiltro
+;
+LOAD
+	UNIDADEERP					as CodUnidade,
+    TABELAPRECOID,
+    TABELAPRECOERP				as CodTabela,
+    TABLEPRECONOME				as NomeTabela,
+    GRUPOPRODUTOERP				as CodGrupo,
+    GRUPOPRODUTONOME			as NomeGrupo,
+    SUBGRUPOPRODUTOERP			as CodSubGrupo,
+    SUBGRUPONOME				as NomeSubGrupo,
+    PRODUTOERP					as CodProduto,
+    PRODUTONOME					as NomeProduto,
+    MARCAPRODUTO				as MarcaProduto,
+    Date(Floor(DATATABELA)) 	as DataTabela,
+    SITUACAOTABELAERP			as SituacaoTabela,
+    UNIDADEPRODUTOERP			as unidadeProduto,
+    PRECOTABELA					as PrecoTabela,
+    CUSTOTABELA					as CustoTabela,
+    QUANTIDADEPRODUTO			as QtdProduto,
+    Date(Floor(DATAINSERCAO))	as DataInsercao,
+    Date(Floor(DATAATUALIZACAO)) as DataAtualizacao    
+FROM [lib://0.Extract/Migracao/TabelaPreco.qvd](qvd);
+
+STORE TabelaPreco INTO [lib://1.Transform/Migracao/TabelaPreco.qvd](qvd);
+Drop Table TabelaPreco;
+
+
+PlanoMetasBayer:
+LOAD
+	Date(Floor(DATAATUALIZACAO)) 	as DataAtualizacao,
+    Date(Floor(DATAEMISSAO)) 		as DataEmissao,
+    Date(Floor(DTPERIODOINICIAL))	as DataPeriodoInicial,
+    Date(Floor(DTPERIODOFINAL))		as DataPeriodoFinal,
+    UNIDADEID						as CodUnidade,
+    UNIDADERURAL					as UnidadeRural,
+    UF								as UF,
+    REGIONALID						as CodRegional,
+    REGIONALRURAL					as Regional,
+    DIRETORIARURAL					as Diretoria,
+    FAMILIA							as Familia,
+    CLASSIFICACAO					as Classificacao,
+    MATERIAL						as Material,
+    METAVOLUMEBAYER					as MetaVolumeBayer,
+    PRECOREFERENCIABAYER			as PrecoRefereciaBayer,
+    METAVALORBAYER					as MetaValorBayer,
+    VOLUME							as Volume,
+    VOLUMEVALOR						as VolumeValor,
+    TIPO							as Tipo    		
+FROM [lib://0.Extract/Migracao/PlanoMetasBayer.qvd](qvd);
+
+STORE PlanoMetasBayer INTO [lib://1.Transform/Migracao/PlanoMetasBayer.qvd](qvd);
+Drop Table PlanoMetasBayer;
+
+Produto:
+LOAD
+    ProdutoCodigo,
+    Produto
+FROM [lib://2.Arquivos/Migracao/ProdutoMigracao.xlsx]
+(ooxml, embedded labels, table is Produto);
+
+RelatorioFaturadoTemp:
+LOAD
+	Num(Num#(CFOP))    				as CFOPinteiro,
+    Date(Floor(DATA_EMISSAO))		as DataEmissao,
+    Year(DATA_EMISSAO)				as AnoEmissao,
+    Month(DATA_EMISSAO)				as MesEmissao,
+    MonthName(DATA_EMISSAO)			as MesAno,
+    Date(Floor(VENCIMENTO))			as DataVencimento,    
+    NUMERO_NF						as NumeroNF,
+    Num(Num#(SITUACAO_NF))			as SituacaoNF,
+    Num(Num#(CFOP))					as CFOP,
+    LOJA							as CodUnidade,
+    CICLO							as Ciclo,
+    Num(Num#(COD_PRODUTO))			as CodProduto,
+    DESC_PROD_ORIGINAL				as DescricaoProdutoOriginal,
+    GRUPO_ORIGINAL					as GrupoOriginal,
+    SUBGRUPO						as SubGrupo,
+    COD_PARCEIRO					as CodParceiro,
+    COD_VINCULO						as CodVinculo,
+    PARCEIRO						as Pareceiro,
+    NOME_PES						as NomePessoa,
+    MUNICIPIO						as Municipio,
+    UF								as UF,
+    MARCA_PRODUTO					as MarcaProduto,
+    ITEM_INO						as ItemINO,
+    QTDE_INO						as QtdINO,
+    VALOR_UNITARIO					as VlrUnitario,
+    Num(Num#(CUSTO_MEDIO))			as CustoMedio,
+    Num(Num#(CUSTO_TABELA))			as CustoTabela,
+    DESCONTO_FIN_TABELA				as DescontoFinalTabela,
+    PRECO_VENDA_TABELA				as PrecoVendaTabela,
+    CODIGO_TABELA					as CodTabela,
+    DESCRICAO_TABELA				as DescricaoTabela,
+    CODIGO_CONSULTOR				as CodConsultor,
+    CODIGO_INDEXADOR				as CodIndexador,
+    VALOR_INDEXADOR					as VlrIndexador,
+    Num(Num#(DUPLICATA))			as Duplicata,    
+    PARCELAS						as Parecela
+FROM [lib://0.Extract/Migracao/RelatorioFaturado.qvd](qvd);
+
+Left Join (RelatorioFaturadoTemp)
+LOAD
+    Num(Num#(ProdutoCodigo)) as CodProduto,
+    Produto
+FROM [lib://2.Arquivos/Migracao/ProdutoMigracao.xlsx](ooxml, embedded labels, table is Produto);
+
+RelatorioFaturado:
+NoConcatenate
+Load
+	*,
+	if(Grupo = 'GRANULADOS',
+    	if(WildMatch(Marca, '*TIMAC*'), 'TIMAC',
+        	if(WildMatch(Produto, '*S9*', '*S10*', '*S15*', '*SZ*'), 'MICRO ESSENTIALS'
+     ))) as Desafio3,
+     
+     if(Grupo = 'SEMENTE DE SOJA' and(WildMatch(DescricaoProdutoOriginal,'*5MI*')), (QtdReal * 800),
+     	if(Grupo = 'SEMENTE DE SOJA' and(WildMatch(DescricaoProdutoOriginal,'*5MI*')), (QtdReal * 36),
+        	if(GrupoOriginal = 'GRAOS A GRANEL', (QtdReal / 60),
+            	if(SubGrupo = 'GRANULADOS' and(VlrUnitario <5), (QtdReal / 1000), QtdReal
+     )))) as QtdNormatizada,
+     
+     Num(Num#(if(Relatorio = 'RECEITA', (VlrUnitario * QtdReal)))) as ReceitaLiquida
+;
+Load
+	*,
+    if(SubGrupo = 'FOLIARES', 'FOLIARES', // verificar  //
+    	if(SubGrupo = 'GRANULADOS', 'GRANULADOS',
+        	if(SubGrupo = 'MILHO', 'SEMENTE DE MILHO',
+            	if(SubGrupo = 'SOJA', 'SEMENTE DE SOJA',
+                	if(SubGrupo = 'GERAL', 'OUTROS',
+                    	if(SubGrupo = 'SORGO', 'OUTROS',
+                        	if(SubGrupo = 'ALGODAO', 'OUTROS',
+                            	if(SubGrupo = 'GIRALSSOL', 'OUTROS',
+                                	if(SubGrupo = 'PASTAGEM', 'OUTROS',
+                                    	if(SubGrupo = 'RESIDUO', 'OUTROS',
+                                        	if(SubGrupo = 'FEIJÃO', 'OUTROS',
+                                            	if(GrupoOriginal = 'MICROBIOLOGICO', 'FOLIARES',
+                                                	if(GrupoOriginal = 'SERVICO TOMADO/PRESTDOS', 'OUTROS',
+                                                    	if(GrupoOriginal = 'COMISSAO', 'OUTROS', GrupoOriginal
+	)))))))))))))) as Grupo,
+
+	if(CodIndexador = '2601' or CodIndexador = '1000002' or CodIndexador = '1000002' or CodIndexador = '10000008' or CodIndexador = '10000010', 'SOJA',
+    	if(CodIndexador = '2602' or CodIndexador = '10000002' or CodIndexador = '10000009' or CodIndexador = '10000013', 'MILHO',
+        	if(CodIndexador = '1000001', 'DÓLAR',
+            	if(CodIndexador = '10000004', 'SORGO',
+                	if(CodIndexador = '10000006', 'ALGODÃO', 'REAIS'
+    ))))) as Indexador,
+	
+    if(MarcaProduto = 'DEKALB', 'MONSANTO',
+    	if(MarcaProduto = 'AGROCERES', 'MONSANTO',
+        	if(MarcaProduto = 'AGROESTE', 'MONSANTO',
+            	if(MarcaProduto = 'GRANEL', 'GRÃOS',
+                	if(MarcaProduto = 'BAYER CROPSCIENCE', 'BAYER',
+                    	if(MarcaProduto = 'DOW AGROSCIENCES', 'DOW',
+                        	if(MarcaProduto = 'COODETEC', 'DOW',
+                            	if(MarcaProduto = 'MORGAN', 'DOW',
+                                	if(MarcaProduto = 'MACROSEED', 'MACROSEEDS',
+                                    	if(MarcaProduto = 'OURO FINO', 'OUROFINO',
+                                        	if(MarcaProduto = 'SEEDCORO', 'SEEDCORP',
+                                            	if(MarcaProduto = 'DUPONT', 'PIONEER', MarcaProduto
+    )))))))))))) as Marca,
+        
+    if((DataVencimento - DataEmissao) > 30, 'a Prazo', 'a Vista') as Modalidade,
+    
+    if(FindOneOf(NomePessoa, 'RURAL') = '1' or NomePessoa = 'VENDEDOR LOJA' or IsNull(NomePessoa), 'BALCÃO', NomePessoa) as Consultor,
+    
+    if(Match(CodIndexador, '2601','1000002','10000008','10000010','2602','10000002','10000009','10000013','10000004','10000006'), 'BARTER', 'REAIS') as Barter,
+    
+    if(AnoEmissao = '2016' and(Pareceiro = 'BAYER S.A.'), 'ANULAÇÃO DE DEVOLUÇÃO',
+    	if(Match((Floor(CFOPinteiro / 100)),'1202','1504','2201','2202','2504','5101','5102','5106','5114','5115','5117','5119','5120','5502','5933','6102','6106','6114','6115','6117','6119','6120','6502','6933'), 'RECEITA',
+        	if(Match(CFOPinteiro,'110210','110215','110217','110220','110225','111310','111710','111815','115210','210210','210214','210215','210225','211310','211710','211814','215210'), 'COMPLEMENTO DE COMPRA',
+            	if(CFOPinteiro = '190700' or(CFOPinteiro = '290700'), 'QUEBRA TECNICA'
+    )))) as Relatorio,
+    
+    Num(Num#(if(CFOPinteiro > 500000, QtdINO, (QtdINO * -1)))) as QtdReal    
+    
+    
+Resident RelatorioFaturadoTemp;
+
+STORE RelatorioFaturado INTO [lib://1.Transform/Migracao/RelatorioFaturado.qvd](qvd);
+Drop Tables RelatorioFaturado, RelatorioFaturadoTemp;

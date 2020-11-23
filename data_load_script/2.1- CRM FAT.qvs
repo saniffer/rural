@@ -1,0 +1,601 @@
+///$tab 2.1- CRM FAT
+MapCulturaCRM:
+MAPPING
+LOAD
+	IdCultura,
+	IF(ISNULL(t),Cultura,t)
+;
+LOAD
+	IdCultura,
+    Cultura,
+    PICK(WildMatch(UPPER(Cultura),'SOJA*','MILHO*'),'SOJA','MILHO') as t
+FROM
+	[lib://1.Transform/CloverCRM/TabCultura.qvd](QVD)
+;
+
+MapSafraCulturaCRM:
+MAPPING
+LOAD
+	Safra,
+    ApplyMap('MapCulturaCRM',IdCultura,NULL())	as	Cultura
+FROM
+	[lib://1.Transform/CloverCRM/TabSafra.qvd](QVD)
+;
+
+TabPerfilCompra:
+LOAD
+	*,
+    IF(Match(PerfilCompraParceiro,'POOL','DISTRIBUIÇÃO'),'Dist + Pool',PerfilCompraParceiro)	AS	PerfilCompraParceiroDiretaPoolDistribuicao
+;
+LOAD DISTINCT
+   	HASH128(PurgeChar(upper(trim(CLIENTE)),' ')) as %LinkPerfilCompraParceiro,
+    UPPER("TIPO DE COMPRA")	as PerfilCompraParceiro
+FROM
+	[lib://2.Arquivos/Marketing/Segmentação Geral.xlsx]
+(ooxml, embedded labels, table is BASE);
+
+CALL subGeraQVD ('TabPerfilCompra','CloverCRM',1);
+
+
+PedidosVendasCRM_EmNegociacao:
+LOAD
+    idatendimento					as idatendimentoCRM,
+    idpedidovenda					as idpedidovendaCRM,
+    num(num#(codproduto_siagri))		AS  CodProdutoSiagri,
+    numero_pedido					as numero_pedidoCRM,
+    idfilial						as idfilialCRM,
+    text(TextBetween(chaveerp,'#','')) as CODI_EMP_CRM,
+    chaveerp						as chaveerpCRM,
+    filial							as FilialCRM,
+    idvendedor						as idvendedorCRM,
+    usuario_vendedor				as usuario_vendedorCRM,
+    parceiro						as parceiroCRM,
+    Date(data_emissao)				as DataEmissaoCRM,
+    Date(data_vencimento_pedido)    as data_vencimento_pedidoCRM,
+    status							as statusCRM,
+    status_erp						as status_erpCRM,
+    integrado						as integradoCRM,
+    finalizado						as finalizadoCRM,
+    local_faturamento				as local_faturamentoCRM,
+    condicao_pagamento				as condicao_pagamentoCRM,
+    tabela_preco					as tabela_precoCRM,
+    tipodenegociacao				as tipodenegociacaoCRM,
+    pedido_de_troca					as pedido_de_trocaCRM,
+    safra							as safraCRM,
+    limite_credito_cliente			as limite_credito_clienteCRM,
+    lmite_credito_utilizado			as lmite_credito_utilizadoCRM,
+    commodity						as commodityCRM,
+    if(percentualdescontocampanha>0,'Sim','Não')		as CampanhaCRM,
+    valor_bruto_commodity			as valor_bruto_commodityCRM,
+    valor_liquidi_commodity			as valor_liquidi_commodityCRM,
+    valortotal						as valortotalCRM,
+    percentualdescontocampanha/100  AS PercentualdescontocampanhaCRM,
+    custounitario					AS custounitarioCRM
+FROM [lib://0.Extract/CloverCRM/PedidosVendasCRM_EmNegociacao.qvd]
+(qvd);
+left Join
+LOAD
+    chaveerp	as chaveerpCRM,
+    Regional	as RegionalCRM
+FROM [lib://1.Transform/CloverCRM/EmpresaCRM.qvd]
+(qvd);
+
+//Este QVD será utilizada posteriormente nos PedidosVendasCRM_EmNegociacao
+CALL subGeraQVD ('PedidosVendasCRM_EmNegociacao','CloverCRM',1);
+
+MapIdAtendimentoIdFilial:
+MAPPING
+LOAD
+    idatendimento,
+    idfilial
+FROM
+	[lib://0.Extract/CloverCRM/atendimento.qvd]
+(qvd);
+
+
+MapIdAtendimentoIdParceiro:	MAPPING	LOAD	idatendimento,	idparceiro					FROM [lib://0.Extract/CloverCRM/atendimento.qvd]	(qvd);
+MapIdAtendimentoIdUsuario:	MAPPING	LOAD	idatendimento,	idusuario					FROM [lib://0.Extract/CloverCRM/atendimento.qvd]	(qvd);
+MapIdAtendimentoDataCad:	MAPPING	LOAD	idatendimento,	date(floor(datacadastro))	FROM [lib://0.Extract/CloverCRM/atendimento.qvd]	(qvd);
+MapIdParceiroChaveERP:		MAPPING	LOAD    idparceiro,		num(num#(chaveerp))			FROM [lib://0.Extract/CloverCRM/parceiro.qvd]		(qvd);
+MapIdUsuarioIdUsuarioERP:	MAPPING	LOAD    idusuario,    	num(num#(chaveerp))			FROM [lib://0.Extract/CloverCRM/usuario.qvd](qvd);
+MapIpedidoVendaDataVenc:	MAPPING	LOAD	idpedidovenda,	Date(MAX(data))				FROM [lib://0.Extract/CloverCRM/PEDIDOVENDAVENCIMENTO.qvd](qvd) GROUP BY idpedidovenda;
+
+
+
+
+MapIdTabelaPrecoDolar:	MAPPING	LOAD	DISTINCT	idtabeladepreco,	dolar	FROM	[lib://0.Extract/CloverCRM/tabeladepreco.qvd](qvd);
+
+
+TabPedidoVenda:
+LOAD
+	*,
+    ApplyMap('MapIdUsuarioIdUsuarioERP',IdUsuario,null())	AS	CodConsultor,
+    ApplyMap('MapIdParceiroChaveERP',IdParceiro,null())		AS	CodParceiro
+;
+LOAD
+	idatendimento				AS	IdAtendimento,
+    idpedidovenda				AS	IdPedidoVenda,
+    idsafra						AS	IdSafra,
+    integrado					AS	FlagPedidoIntegrado,
+    finalizado					AS	FlagPedidoFinalizado,
+    bloqueado					AS	FlagPedidoBloqueado,
+    cancelado					AS	FlagPedidoCancelado,
+	campanha					AS	FlagPedidoCampanha,
+    timestamp(datacadastro) 	AS 	DataHoraCadastro,
+    codigo						AS	NumeroPedidoVenda,
+    observacao					AS	Observacao,
+    idtabeladepreco				AS	IdTabelaPreco,
+    timestamp(datafinalizacao)	AS	DataHoraFinalizacao,
+    validarcota					AS ValidarCota,
+    ApplyMap('MapIpedidoVendaDataVenc',idpedidovenda,null())	AS	DataVencimento,
+    ApplyMap('MapIdAtendimentoDataCad',idatendimento,null())	AS	DataPedidoVenda,
+    ApplyMap('MapIdTabelaPrecoDolar',idtabeladepreco,0)			AS	FlagPedidoEmDolar,
+    ApplyMap('MapIdAtendimentoIdUsuario',idatendimento,null())	AS	IdUsuario,
+	ApplyMap('MapIdAtendimentoIdParceiro',idatendimento,null())	AS	IdParceiro,
+    ApplyMap('MapIdAtendimentoIdFilial',idatendimento,null())	AS	IdFilial
+FROM 
+	[lib://0.Extract/CloverCRM/pedidovenda.qvd]
+(qvd);
+
+
+MapIdPedidoVendaDataPedido:	MAPPING	LOAD	DISTINCT	IdPedidoVenda,    DataPedidoVenda		RESIDENT	TabPedidoVenda;
+MapIdPedidoVendaIdFilial:	MAPPING	LOAD	DISTINCT	IdPedidoVenda,    IdFilial				RESIDENT	TabPedidoVenda;
+MapIdPedidoVendaIdSafra:	MAPPING	LOAD	DISTINCT	IdPedidoVenda,    IdSafra				RESIDENT	TabPedidoVenda;
+MapIdPedidoVendaCodParceiro:MAPPING	LOAD	DISTINCT	IdPedidoVenda,    CodParceiro			RESIDENT	TabPedidoVenda;
+MapIdPedidoVendaFlagDolar:	MAPPING	LOAD	DISTINCT	IdPedidoVenda,    FlagPedidoEmDolar		RESIDENT	TabPedidoVenda;
+MapIdPedidoVendaNPedido:	MAPPING	LOAD	DISTINCT	IdPedidoVenda,    NumeroPedidoVenda		RESIDENT	TabPedidoVenda;
+MapIdPedidoVendaDHFinali:	MAPPING	LOAD	DISTINCT	IdPedidoVenda,    DataHoraFinalizacao	RESIDENT	TabPedidoVenda;
+MapIdPedidoVendaDCadastro:	MAPPING	LOAD	DISTINCT	IdPedidoVenda,    DataHoraCadastro		RESIDENT	TabPedidoVenda;
+MapIdPedidoVendaCodConsult:	MAPPING	LOAD	DISTINCT	IdPedidoVenda,    CodConsultor			RESIDENT	TabPedidoVenda;
+
+
+DROP FIELDS 
+	DataPedidoVenda
+	,IdFilial
+	,IdSafra
+	,IdParceiro
+	,FlagPedidoEmDolar
+    //,NumeroPedidoVenda
+FROM 
+	TabPedidoVenda
+;
+
+CALL subGeraQVD ('TabPedidoVenda','CloverCRM',1);
+
+
+MapIdProdutoCodProdutoSiagri:	MAPPING	LOAD    IdProduto,    CodProdutoSiagri	FROM	[lib://1.Transform/CloverCRM/TabProduto.qvd](qvd);
+
+MapIdFilialCodERP:
+MAPPING
+LOAD 
+	idfilial,
+	TextBetween(chaveerp,'#','')
+FROM
+	[LIB://0.Extract/CloverCRM/filial.qvd]
+(qvd);
+
+FatItemPedidoVenda:
+LOAD
+	*,
+    ValorCustoUnitario / ValorUnitario	AS	PercMargemItem, 
+    ValorUnitario - ValorCustoUnitario	AS	ValorMargemUnitária
+;
+LOAD
+	*,
+	QtdProduto * ValorUnitario		AS	ValorVendaTotal,
+    QtdProduto * ValorCustoUnitario	AS	ValorCustoTotal,
+;
+LOAD
+	*,
+    ValorCustoUnitarioOriginal 	* ValorCotacao	AS	ValorCustoUnitario,
+    ValorUnitarioOriginal		* ValorCotacao	AS	ValorUnitario
+;
+LOAD
+	*,
+    //Chave que vincula os pedidos do CRM com o Siagri.
+    Hash128(NumeroPedidoVenda,CodProdutoSiagri)	AS	%LinkPedidoCrmSiagri,
+	IF(FlagPedidoEmDolar=1,ApplyMap('TabCotacaoDolar',DataPedidoVenda,1),1)	AS	ValorCotacao,
+    ApplyMap('MapIdFilialCodERP',IdFilial,null())	AS	CodFilial
+    
+;
+LOAD
+    iditempedidovenda				AS	IdItemPedidoVenda,
+    idpedidovenda					AS	IdPedidoVenda,
+    idproduto						AS	IdProduto,
+    idcampanharegradesconto			AS	IdCampanhaRegraDesconto,
+	idcampanha						AS	IdCampanha,
+    quantidade						AS	QtdProduto,
+    valorunitario					AS	ValorUnitarioOriginal,
+    totalsemdesconto				AS	ValorVendaTotalSemDescontoOriginal,
+    valordesconto					AS	ValorDescontoOriginal,
+    percentualdesconto/100			AS	PercDesconto,
+    valortotal						AS	ValorVendaTotalOriginal,
+    margem/100						AS	PercMargemOriginal,
+    comissao						AS	ValorComissao,
+    custounitario					AS	ValorCustoUnitarioOriginal,
+    custounitariobase				AS	ValorCustoUnitarioBase,
+    percentualdescontocampanha/100	AS	PercDescontoCampanha,
+    
+    ApplyMap('MapIdPedidoVendaCodConsult',idpedidovenda,NULL())		AS	CodConsultor,
+	ApplyMap('MapIdPedidoVendaDHFinali',idpedidovenda,null())		AS	DataHoraFinalizacao,
+	ApplyMap('MapIdPedidoVendaDCadastro',idpedidovenda,null())		AS	DataHoraCadastro,
+    ApplyMap('MapIdProdutoCodProdutoSiagri',idproduto,null())		AS	CodProdutoSiagri,
+    ApplyMap('MapIdPedidoVendaFlagDolar',idpedidovenda,Null())		AS	FlagPedidoEmDolar,
+    ApplyMap('MapIdPedidoVendaCodParceiro',idpedidovenda,null())	AS	CodParceiro,
+    ApplyMap('MapIdPedidoVendaIdFilial',idpedidovenda,null())		AS	IdFilial,
+	ApplyMap('MapIdPedidoVendaIdSafra',idpedidovenda,null())		AS	IdSafra,
+    ApplyMap('MapIdPedidoVendaDataPedido',idpedidovenda,null())		AS	DataPedidoVenda,
+    ApplyMap('MapIdPedidoVendaNPedido',idpedidovenda,null())		AS	NumeroPedidoVenda
+FROM 
+	[lib://0.Extract/CloverCRM/itempedidovenda.qvd]
+(qvd);
+
+CALL subGeraQVD ('FatItemPedidoVenda','CloverCRM',1);
+
+
+//Este QVD será utilizada posteriormente nos atendimentos
+
+
+TabStatusPedido:
+LOAD	DISTINCT	IdPedidoVenda,	'Integrado'	AS	StatusPedido	FROM [lib://1.Transform/CloverCRM/TabPedidoVenda.qvd](qvd)	WHERE	FlagPedidoIntegrado	=	1;
+CONCATENATE(TabStatusPedido)
+LOAD	DISTINCT	IdPedidoVenda,	'Finalizado'AS	StatusPedido	FROM [lib://1.Transform/CloverCRM/TabPedidoVenda.qvd](qvd)	WHERE	FlagPedidoFinalizado	=	1;
+CONCATENATE(TabStatusPedido)
+LOAD	DISTINCT	IdPedidoVenda,	'Cancelado'	AS	StatusPedido	FROM [lib://1.Transform/CloverCRM/TabPedidoVenda.qvd](qvd)	WHERE	FlagPedidoCancelado	=	1;
+
+CALL subGeraQVD ('TabStatusPedido','CloverCRM',1);
+
+TabVinculoIbmobiliario:
+LOAD
+    idlocal						AS	IdLocal,
+    ApplyMap('MapIdLocalToCliente',idlocal,null())	AS	Parceiro,
+    idlocal						AS	%LinkVinculoImobiliario,
+    idvinculoimobiliario		AS	IdVinculoImobiliario,
+    area						AS	ValorArea,
+    areacultivavel				AS	ValorAreaCultivavel,
+    area - areacultivavel		AS	ValorAreaNãoCultivavel,
+    idpropriedade				AS	IdPropriedade,
+    capacidadesilo				AS	ValorCapacidadeSilo,
+    capacidadetanques			AS	ValorCapacidadeTanques,
+    numerotanques				AS	QtdTanques,
+    areairrigada				AS	ValorAreaIrrigada,
+    ApplyMap('MapUnidadeMedida',idunidadedemedida,null())	AS	UnidadeDeMedida,
+    ApplyMap('MapNomePropriedade',idpropriedade,NULL())		AS	Propriedade
+FROM
+	[lib://0.Extract/CloverCRM/vinculoimobiliario.qvd]
+(qvd);
+
+CALL subGeraQVD ('TabVinculoIbmobiliario','CloverCRM',1);
+
+
+
+
+tempTabAtendimento:
+LOAD
+   	ApplyMap('MapAtendimentoPedidoVenda',idatendimento,null())	AS	PossuiPedidoVenda,
+    idatendimento				AS	IdAtendimento,
+    idfilial					AS	IdFilial,
+    
+    idparceiro					AS	IdParceiro,
+    DATE(datacadastro)			AS	DataCadastroAtendimento,
+    ApplyMap('MapParceiro',idparceiro,null())	AS	parceiroCRM,
+    idlocal						AS	IdLocal,
+    endereco					AS	EnderecoAtendimento,
+    statusgps					AS	StatusGPS,
+    idlocal						AS	%LinkVinculoImobiliario,
+    ApplyMap('MapFilialCRM',idfilial,null())	AS	Filial,
+    ApplyMap('MapRegionalCRM',idfilial,null())	AS	Regional,
+	Replace(latitude,'.',',')					AS	LatitudeAtendimento,
+    Replace(longitude,'.',',')					AS	LongitudeAtendimento,
+    ApplyMap('MapIdLocalemIdCidade',idlocal,NULL())											AS	%LinkIBGE,
+    ApplyMap('MapUsuario',idusuario,null())													AS	Consultor,
+    GeoMakePoint(Replace(latitude,'.',','),Replace(longitude,'.',','))						AS	LocalizacaoAtendimento,
+    DATE(datainicio)																		AS	DataAtendimento,
+    timestamp(TimesTamp#(date(datainicio)&' '&horainicio,'DD/MM/YYYY hh:mm'))				AS	DataHoraInicioAtendimento,
+    timestamp(TimesTamp#(date(datafim)&' '&horafim,'DD/MM/YYYY hh:mm'))						AS	DataHoraFimAtendimento,
+    ApplyMap('MapTipoAtendimento',idtipodeatendimento,NULL())								AS	TipoAtendimento,
+    ApplyMap('MapIdSafraEmCultura',ApplyMap('MapIdSafra',idatendimento,NULL()),NULL())		AS	Cultura
+FROM 
+	[LIB://0.Extract/CloverCRM/atendimento.qvd]
+(qvd);
+//LEFT'S FEITO POIS EXISTE MAIS DE UM AGENDAMENTO PARA CADA ATENDIMENTO
+LEFT JOIN(tempTabAtendimento)
+LOAD
+    idatendimento	AS	IdAtendimento,
+    idagenda		as	IdAgenda
+FROM 
+	[lib://0.Extract/CloverCRM/agendaatendimento.qvd]
+(qvd);
+//LEFT'S FEITO POIS EXISTE MAIS DE UM SERVICO PARA CADA ATENDIMENTO
+LEFT JOIN(tempTabAtendimento)
+LOAD
+    idatendimento	AS	IdAtendimento,
+	idservico		AS	IdServico
+FROM
+	[lib://0.Extract/CloverCRM/servicoatendimento.qvd]
+(qvd);
+LEFT JOIN(tempTabAtendimento)
+LOAD
+    idservico	AS	IdServico,
+    descricao	AS	Servico//Será alterado
+FROM 
+	[lib://0.Extract/CloverCRM/servico.qvd]
+(qvd);
+
+TabAtendimento:
+LOAD
+	*,
+    hash128(ClientePrincipal)	AS	%LinkSegmentacaoParceiro,
+    RowNo()	as	%LinkAtendimento
+;
+LOAD
+	*,
+    num(num#(ApplyMap('MapFilialEmCodFilial',Capitalize(Filial),null())))	AS	CodEmpresa,
+    MapSubString('RemoveAcento_Map',ApplyMap('MapVinculoParceiro',parceiroCRM,parceiroCRM))	AS	ClientePrincipal,
+	HASH128(PurgeChar(upper(trim(parceiroCRM)),' ')) 			AS %LinkPerfilCompraParceiro,
+    IF(ISNULL(IdAgenda),1,0)									AS	FlagAtendimentoSemAgenda,
+    IF(ISNULL(PossuiPedidoVenda),Servico,'PEDIDO VENDA')		AS	AtividadeVisita
+RESIDENT
+	tempTabAtendimento
+;
+
+DROP TABLE tempTabAtendimento;
+
+CALL subGeraQVD ('TabAtendimento','CloverCRM',1);
+
+
+
+EmpresaCRM:
+LOAD
+	*,
+    NUM(NUM#(CODI_EMP))	as	CodFilial
+WHERE
+	NOT ISNULL(Filial)
+;
+LOAD   
+    idfilial		as IdFilial,
+    chaveerp,
+    text(TextBetween(chaveerp,'#','')) as CODI_EMP,
+    ApplyMap('MapLocalFilialCRM',idlocal,null())	as	Filial
+
+FROM [lib://0.Extract/CloverCRM/filial.qvd]
+(qvd);
+left Join
+LOAD
+    text(CODI_GEM) as CODI_GEM,
+    text(CODI_EMP) as CODI_EMP
+FROM [lib://0.Extract/Siagri/IGRUPOEMPRESA.qvd]
+(qvd);
+left Join
+LOAD
+    text(CODI_GEM)	as CODI_GEM,
+    DESC_GEM	as Regional,
+    ApplyMap('MapRegionalDiretoria',DESC_GEM,null()) as Diretoria
+   
+FROM [lib://0.Extract/Siagri/GRUPOEMPRESA.qvd](qvd);
+
+
+CALL subGeraQVD ('EmpresaCRM','CloverCRM',1);
+
+
+
+MapIdAtendimento:
+MAPPING
+LOAD
+	idagenda,
+    idatendimento
+FROM 
+	[lib://0.Extract/CloverCRM/agendaatendimento.qvd]
+(qvd);
+
+
+AtendimentoPlanejado:
+LOAD
+	*,
+    rowno()										AS	IdAgendamento,
+	hash128(FilialCRM,Consultor,parceiroCRM)	AS	%LinkAgendamento,
+    ApplyMap('MapAtendimentoPedidoVenda',IdAtendimento,null())	AS	PossuiPedidoVenda,
+	hash128(ClientePrincipal) 			AS	%LinkSegmentacaoParceiro
+
+;
+LOAD
+    idagenda,
+   	ApplyMap('MapIdAtendimento',idagenda,null())	AS	IdAtendimento,
+    date(Floor(datahoraagendamento)) 	as datahoraagendamento,
+    year(datahoraagendamento)  			as Ano,
+    Month(datahoraagendamento) 			as Mes,
+    Date(floor(datahorainicio))  		as datahorainicio,
+    Date(datahorafim)     				as datahorafim,
+    descricao,
+    HASH128(PurgeChar(upper(trim(parceiro)),' ')) AS %LinkPerfilCompraParceiro,
+    parceiro 							AS parceiroCRM,
+    nome								AS	Consultor,
+    Propriedade,
+    
+ 	MapSubString('RemoveAcento_Map',ApplyMap('MapVinculoParceiro',parceiro,parceiro))	AS	ClientePrincipal,
+
+    REPLACE(UPPER(MapSubString('RemoveAcento_Map',trim(replace(TextBetween(Loja,' - ',''),' A','')))),'PARAISO','PARAISO TO')	as FilialCRM,
+    justificativacancelamento,
+    
+    IF(realizada<>'0',idagenda)		AS	idagendaRealizada,
+    IF(realizada='0',idagenda)		AS	idagendaNãoRealizada,
+    
+    if(realizada='0','Não Realizada','Realizada') as realizada,
+    if(cancelada='0','Não Cancelada','Cancelada') as cancelada,
+    chaveerp,
+    parceiro
+FROM [lib://0.Extract/CloverCRM/AtendimentoPlanejado.qvd]
+(qvd);
+LEFT JOIN(AtendimentoPlanejado)
+LOAD
+    chaveerp,
+    Regional,
+    Num(Num#(CODI_EMP)) as CodEmpresa,
+    MapSubString('RemoveAcento_Map',Regional)	AS	RegionalSemAcento
+FROM [lib://1.Transform/CloverCRM/EmpresaCRM.qvd]
+(qvd);
+
+
+
+CALL subGeraQVD ('AtendimentoPlanejado','CloverCRM',1);
+
+
+
+
+TabPropriedade:
+LOAD
+    idpropriedade				AS	IdPropriedade,
+    areatotal					AS	AreaTotal,	
+    descricao					AS	Propriedade,
+    distanciafilial				AS	DistanciaFilial,
+    codigo						AS	CodigoPropriedade,
+    idcidade					AS	IdCidade,
+    bloqueado					AS	FlagBloqueado,
+    idusuario					AS	IdUsuario,
+    altitude					AS	AltitudePropriedade,
+    DATE(datacadastro)			AS	DataCadastroPropriedade,
+    Replace(latitude,'.',',')	AS	LatitudePropriedade,
+    Replace(longitude,'.',',')	AS	LongitudePropriedade,
+    ApplyMap('MapUnidadeMedida',idunidadedemedida,null())				AS	UnidadeDeMedida,
+    GeoMakePoint(Replace(latitude,'.',','),Replace(longitude,'.',','))	AS	LocalizacaoPropriedade
+FROM 
+	[LIB://0.Extract/CloverCRM/propriedade.qvd]
+(qvd);
+
+CALL subGeraQVD ('TabPropriedade','CloverCRM',1);
+
+
+
+TabAprovacoes:
+LOAD
+    PEDIDO		AS	idpedidovendaCRM,
+    nome 			as AprovadorEtapa1,
+    situacao 	as SituacaoAprovacaoEtapa1,
+    parecer 			as ParecerEtapa1
+FROM 
+	[lib://0.Extract/CloverCRM/TabAprovacoes.qvd](qvd)
+WHERE
+	ordem=1
+;
+
+LEFT JOIN(TabAprovacoes)
+LOAD
+    PEDIDO		AS	idpedidovendaCRM,
+    nome 			as AprovadorEtapa2,
+    situacao 	as SituacaoAprovacaoEtapa2,
+    parecer 			as ParecerEtapa2
+FROM 
+	[lib://0.Extract/CloverCRM/TabAprovacoes.qvd](qvd)
+WHERE
+	ordem=2
+;
+
+LEFT JOIN(TabAprovacoes)
+LOAD
+    PEDIDO		AS	idpedidovendaCRM,
+    nome 			as AprovadorEtapa3,
+    situacao 	as SituacaoAprovacaoEtapa3,
+    parecer 			as ParecerEtapa3
+FROM 
+	[lib://0.Extract/CloverCRM/TabAprovacoes.qvd](qvd)
+WHERE
+	ordem=3
+;
+
+LEFT JOIN(TabAprovacoes)
+LOAD
+    PEDIDO		AS	idpedidovendaCRM,
+    nome 		AS AprovadorEtapa4,
+    situacao 	AS SituacaoAprovacaoEtapa4,
+    parecer 	AS ParecerEtapa4
+FROM 
+	[lib://0.Extract/CloverCRM/TabAprovacoes.qvd](qvd)
+WHERE
+	ordem=4
+;
+
+CALL subGeraQVD ('TabAprovacoes','CloverCRM',1);
+
+
+
+	PedidosVendasCRM_Integrados:
+	LOAD
+		*,
+	    IF(
+	    	(CodSafra='19/20' and YEAR(data_vencimento_pedidoCRM)=2019) OR 
+	    	(CodSafra='20/20' and (data_vencimento_pedidoCRM -  DataEmissaoCRM) <=30),'A vista','A prazo')	as	TipoPagamento
+	
+	;
+	LOAD
+		valorunitario	   * ValorCotacao 	AS ValorUnitarioDolar,
+	    //Se o pedido for dolar, multiplicar pelo valor de cotacao
+	   	IF(dolar=1,
+	    	//Se o pedido teve o custo já gravado em dolar, utilizar o custo gravado
+	   		IF(FlagGravadoEmDolar=1,custounitarioCRM,custounitarioCRM * ValorCotacao)
+	    ,custounitarioCRM) 	AS CustoUnitarioDolar,
+	    
+	   //custounitarioCRM     					AS CustoUnitarioDolar,
+		
+	  	HASH128(upper(trim(RegionalCRM)),trim(upper(parceiroCRM)))                            AS     %LinkPotencialTecnologicoSemGrupo,
+		HASH128(upper(trim(RegionalCRM)),trim(upper(parceiroCRM)),upper(trim(GrupoProduto)),upper(trim(CulturaCRM))) as %LinkPotencialTecnologico,
+		*
+	;
+	LOAD
+		*,
+	    IF(dolar=1 and  round((custounitarioCRM/ValorCotacao) / valorunitario -1,0.0001) * -1  = round(MargemCRM,0.0001),1,0)	AS FlagGravadoEmDolar,
+	
+	;
+	LOAD
+    	DataCongelamento,
+		dolar,
+	   	IF(dolar=1,ApplyMap('TabCotacaoDolar',Date(FLOOR(data_emissao)),1),1)	AS	ValorCotacao,
+		observacao,
+		idlocalfaturamento,
+	    ApplyMap('MapEmpresaCRM',text(chaveerp),null())	AS	RegionalCRM,
+	    ApplyMap('MapTipoProdutoCRM',idproduto,NULL())	AS	GrupoProduto,
+		idproduto										AS	IdProdutoCRM,
+	    ApplyMap('MapSafraCulturaCRM',safra,null())		as	CulturaCRM,
+	   	num(num#(codproduto_siagri))		AS  CodProdutoSiagri,
+		LEFT(safra,5)					AS CodSafra,
+		text(idparceiro)				AS	IdParceiroCRM,
+	    idatendimento					as idatendimentoCRM,
+	    idpedidovenda					as idpedidovendaCRM,
+	    numero_pedido					as numero_pedidoCRM,
+	    idfilial						as idfilialCRM,
+	    text(TextBetween(chaveerp,'#','')) as CODI_EMP_CRM,
+	    chaveerp						as chaveerpCRM,
+	    MapSubString('RemoveAcento_Map',UPPER(trim(TextBetween(filial,'-',''))))	as FilialCRM,
+	    idvendedor						as idvendedorCRM,
+	    usuario_vendedor				as usuario_vendedorCRM,
+	    parceiro						as parceiroCRM,
+	    Date(FLOOR(data_emissao))				as DataEmissaoCRM,
+	    Date(FLOOR(data_vencimento_pedido))    as data_vencimento_pedidoCRM,
+	    status							as statusCRM,
+	    status_erp						as status_erpCRM,
+	    integrado						as integradoCRM,
+	    finalizado						as finalizadoCRM,
+	    local_faturamento				as local_faturamentoCRM,
+	    condicao_pagamento				as condicao_pagamentoCRM,
+	    tabela_preco					as tabela_precoCRM,
+	    tipodenegociacao				as tipodenegociacaoCRM,
+	    pedido_de_troca					as pedido_de_trocaCRM,
+	    safra							as safraCRM,
+	    limite_credito_cliente			as limite_credito_clienteCRM,
+	    lmite_credito_utilizado			as lmite_credito_utilizadoCRM,
+	    commodity						as CulturaCRMCommodity,
+	    valor_bruto_commodity			as valor_bruto_commodityCRM,
+	    valor_liquidi_commodity			as valor_liquidi_commodityCRM,
+	    valortotal						as valortotalCRM,
+	    if(percentualdescontocampanha>0,'Sim','Não')		as CampanhaCRM,
+	    margem/100						as MargemCRM,
+	    percentualdescontocampanha/100  AS PercentualdescontocampanhaCRM,
+	    custounitario					AS custounitarioCRM,
+	    quantidade						as 	quantidadeCRM,
+	    valorunitario
+	FROM 
+		[lib://0.Extract/PosicaoDiaria/PedidosVendasCRM_Integrados_$(vHoje).qvd]
+	(qvd);
+	
+
+    
+	CALL subGeraQVD ('PedidosVendasCRM_Integrados','CloverCRM',1);

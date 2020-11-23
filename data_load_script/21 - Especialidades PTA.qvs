@@ -1,0 +1,277 @@
+///$tab 21 - Especialidades PTA
+TabDescricaoPTA:
+LOAD
+	*,
+    IF(TipoPTA='Basico',Agrupador,NULL())	AS	ProdutoBasico,
+    IF(TipoPTA='Médio',Agrupador,NULL())	AS	ProdutoMedio,
+    IF(TipoPTA='Alto',Agrupador,NULL())		AS	ProdutoAlto,
+    IF(TipoPTA='Basico',1,0)				AS	FlagProdutoBasico,
+    IF(TipoPTA='Médio',1,0)					AS	FlagProdutoMedio,
+    IF(TipoPTA='Alto',1,0)					AS	FlagProdutoAlto
+;
+LOAD
+    Produto,
+    Agrupador,
+	Dose	 	AS	ValorDose,
+    "Tipo PTA"	AS	TipoPTA
+FROM
+	[lib://2.Arquivos/PTA/Especialidades PTA.xlsx](ooxml, embedded labels, table is [Depara PTA])
+WHERE
+	NOT ISNULL(Produto)
+;
+
+
+CALL subGeraQVD ('TabDescricaoPTA','PTA',1);
+
+
+tempFatBasePTA:
+LOAD
+	%LinkEspecialidadesPTA,
+    %LinkEspecialidadesProdutoPTA,
+	ProdutoEspecialidades,
+    ParceiroPrincipal	as	Cliente,
+    Vendedor,
+    Ciclo,
+    InscricaoEstadual,
+    CodProdutoSiagri 		AS ProdutoId,
+    QtdProduto
+FROM
+	[lib://1.Transform/Siagri/FatSaidasFaturadas.qvd](qvd)
+;
+CONCATENATE(tempFatBasePTA)
+LOAD
+	%LinkEspecialidadesPTA,
+    %LinkEspecialidadesProdutoPTA,
+	ProdutoEspecialidades,
+    ClientePrincipal	as	Cliente,
+    Vendedor,
+    Ciclo,
+    ProdutoId,
+    InscricaoEstadual,
+    QtdProduto
+FROM
+	[lib://1.Transform/CloverCRM/PedidosCRM_SIAGRI_MARGEM.qvd](QVD)
+WHERE
+	DescricaoPedidoTipo = 'Movimento'
+;
+
+MapProdutosPTA:
+MAPPING
+LOAD	DISTINCT
+    Produto,
+	1
+FROM
+	[lib://1.Transform/PTA/TabDescricaoPTA.qvd]
+(qvd);
+
+//CRIADA BASE COM QUE SERA UTILIZADO
+FatBasePTA:
+NoConcatenate
+LOAD
+	%LinkEspecialidadesPTA,
+    %LinkEspecialidadesProdutoPTA,
+    InscricaoEstadual,
+    ProdutoId,
+    Cliente,
+    Vendedor,
+    Ciclo,
+   // InscricaoEstadual&'-'&ChaveCiclo	AS %LinkEspecialidadesPTA,
+    QtdProduto,
+    ProdutoEspecialidades
+RESIDENT
+	tempFatBasePTA
+WHERE
+	NOT ISNULL(InscricaoEstadual)
+;
+
+DROP TABLE tempFatBasePTA;
+
+//relacionando todos produtos com todas incrições estaduais
+
+TabProdutosInscricoes:
+LOAD DISTINCT
+	InscricaoEstadual,
+    Cliente,
+    Vendedor,
+    Ciclo
+ RESIDENT
+ 	FatBasePTA
+;
+LEFT JOIN(TabProdutosInscricoes)
+LOAD	DISTINCT
+	ProdutoId
+RESIDENT
+ 	FatBasePTA
+WHERE
+	NOT ISNULL(ProdutoEspecialidades)
+;
+
+
+CALL subGeraQVD ('TabProdutosInscricoes','PTA',1); 
+
+
+tempTabPTA:
+LOAD	DISTINCT
+    Produto		AS	ProdutoEspecialidades,
+    ValorDose,
+    TipoPTA
+FROM
+	[lib://1.Transform/PTA/TabDescricaoPTA.qvd]
+(qvd);
+LEFT JOIN(tempTabPTA)
+LOAD	DISTINCT
+    TipoPTA,
+    count(distinct Produto)	AS	QtdProdutoPTA
+FROM
+	[lib://1.Transform/PTA/TabDescricaoPTA.qvd](qvd)
+GROUP BY
+	TipoPTA
+;
+
+LEFT JOIN(tempTabPTA)
+LOAD	DISTINCT
+	ProdutoEspecialidades,
+    %LinkEspecialidadesPTA,
+    SUM(QtdProduto)	AS	QtdProduto
+RESIDENT
+	FatBasePTA
+WHERE
+	ApplyMap('MapProdutosPTA',ProdutoEspecialidades,0)=1
+GROUP BY
+	ProdutoEspecialidades,
+    %LinkEspecialidadesPTA
+;
+
+tempMapTabClassificacaoPTA:
+LOAD
+	TipoPTA,
+	%LinkEspecialidadesPTA,
+    QtdProdutoPTA,
+   	count(DISTINCT ProdutoEspecialidades)	AS	QtdProdutosVendidos
+RESIDENT
+	tempTabPTA
+WHERE
+	ApplyMap('MapProdutosPTA',ProdutoEspecialidades,0)=1
+GROUP BY
+	TipoPTA,
+	%LinkEspecialidadesPTA,
+    QtdProdutoPTA
+;	
+
+DROP TABLE tempTabPTA;
+
+MapTabClassificacaoPTA:
+MAPPING
+LOAD
+	%LinkEspecialidadesPTA,
+	FirstSortedValue(TipoPTA,-QtdProdutoPTA)	as	TipoPTA
+RESIDENT
+	tempMapTabClassificacaoPTA
+WHERE
+	QtdProdutoPTA = QtdProdutosVendidos
+GROUP BY
+	%LinkEspecialidadesPTA
+;	
+
+DROP TABLE tempMapTabClassificacaoPTA;
+
+MapNivelInvestimento:
+MAPPING
+LOAD	DISTINCT
+	%LinkEspecialidadesPTA,
+    IF(NOT ISNULL(tempNivelInvestimento),tempNivelInvestimento,null())	as	NivelInvestimento
+;
+LOAD
+	%LinkEspecialidadesPTA,
+    tempNivelInvestimento,
+	COUNT(DISTINCT ProdutoEspecialidades)	AS	QtdProduto
+GROUP BY
+	%LinkEspecialidadesPTA,
+    tempNivelInvestimento
+;
+LOAD	DISTINCT
+	%LinkEspecialidadesPTA,
+    
+    ProdutoEspecialidades,
+    ApplyMap('MapTabClassificacaoPTA',%LinkEspecialidadesPTA,NULL())	AS	tempNivelInvestimento//Será alterado posteriormente
+RESIDENT
+	FatBasePTA
+;
+
+
+MapDosePTAGatilhado:	MAPPING	LOAD	DISTINCT	HASH128(TipoPTA,Produto),	ValorDose	FROM [lib://1.Transform/PTA/TabDescricaoPTA.qvd]	(qvd);
+MapDosePTA:				MAPPING	LOAD	DISTINCT	Produto,	ValorDose	FROM [lib://1.Transform/PTA/TabDescricaoPTA.qvd]	(qvd);
+
+
+TabIndicePTA:
+LOAD
+	*
+    ,ValorAreaVendaGatilhado/100 AS ValorIndicePTA
+;
+LOAD
+	%LinkEspecialidadesPTA
+    ,%LinkEspecialidadesProdutoPTA
+    ,NivelInvestimento
+	,QtdProduto
+    ,ProdutoEspecialidades
+    ,ValorDoseTotal
+    ,ValorDoseGatilhado
+   	,FlagPossuiNivelInvestimento
+	,alt(QtdProduto/ValorDoseGatilhado,0)	AS	ValorAreaVendaGatilhado
+	,alt(QtdProduto/ValorDoseTotal,0)		AS	ValorAreaVendaTotal
+    ,IF(ValorDoseTotal=0,'Não','Sim')	AS	[Apenas Produtos PTA]
+    
+;
+LOAD
+	*,
+	ApplyMap('MapDosePTAGatilhado',HASH128(NivelInvestimento,ProdutoEspecialidades),0)	AS	ValorDoseGatilhado,
+  	ApplyMap('MapDosePTA',ProdutoEspecialidades,0)								AS	ValorDoseTotal,
+    IF(NOT ISNULL(NivelInvestimento),1,0)	AS	FlagPossuiNivelInvestimento,
+;
+LOAD
+	%LinkEspecialidadesPTA
+    ,%LinkEspecialidadesProdutoPTA
+	,QtdProduto
+    ,ProdutoEspecialidades
+    ,ApplyMap('MapNivelInvestimento',%LinkEspecialidadesPTA,null())	as	NivelInvestimento
+	
+RESIDENT
+	FatBasePTA
+;
+
+DROP TABLE FatBasePTA;
+
+
+LEFT JOIN(TabIndicePTA)
+LOAD
+	%LinkEspecialidadesPTA,
+    min(ValorIndicePTA)	AS	ValorPTA
+RESIDENT
+	TabIndicePTA
+WHERE
+	ValorDoseGatilhado>0 AND FlagPossuiNivelInvestimento=1
+GROUP BY
+		%LinkEspecialidadesPTA
+;
+
+
+TabValorPTA:
+LOAD	DISTINCT
+	%LinkEspecialidadesPTA,
+    
+    IF(ValorPTA=0,'Não Configura PTA',
+    	IF(ValorPTA<1,'PTA Incompleto','PTA Completo'))	AS	StatusInvestimento,
+        
+    IF(ValorPTA>=1,NivelInvestimentoReal)	AS	NivelInvestimentoReal,
+    ValorPTA
+;
+LOAD	DISTINCT
+	%LinkEspecialidadesPTA,
+	NivelInvestimento	AS	NivelInvestimentoReal,
+    ALT(ValorPTA,0)		AS	ValorPTA
+RESIDENT
+	TabIndicePTA
+;
+
+ CALL subGeraQVD ('TabIndicePTA','PTA',1); 
+ CALL subGeraQVD ('TabValorPTA','PTA',1);

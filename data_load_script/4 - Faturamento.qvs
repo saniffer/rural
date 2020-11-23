@@ -1,0 +1,368 @@
+///$tab 4 - Faturamento
+VENDAS_ONLINE6:
+LOAD
+    date(floor(DATA_EMISSAO)) 	as DATA_EMISSAO,
+    year(DATA_EMISSAO)			as [ANO EMISSAO],
+    MONTH(DATA_EMISSAO)			as [MES EMISSAO],
+    IF ([DATA_EMISSAO]=2016 AND [PARCEIRO]='BAYER S.A.', 'ANULAÇÃO DE DEVOLUÇÃO',
+   if ((MID([CFOP],1,4)) =1202 OR (MID([CFOP],1,4)) =1504 OR
+(MID([CFOP],1,4)) =2201 OR
+(MID([CFOP],1,4)) =2202 OR
+(MID([CFOP],1,4)) =2504 OR 
+(MID([CFOP],1,4)) =5101 OR 
+(MID([CFOP],1,4)) =5102 OR 
+(MID([CFOP],1,4)) =5106 OR 
+(MID([CFOP],1,4)) =5114 OR 
+(MID([CFOP],1,4)) =5115 OR 
+(MID([CFOP],1,4)) =5117 OR 
+(MID([CFOP],1,4)) =5119 OR 
+(MID([CFOP],1,4)) =5120 OR 
+(MID([CFOP],1,4)) =5502 OR 
+(MID([CFOP],1,4)) =5933 OR 
+(MID([CFOP],1,4)) =6102 OR  
+(MID([CFOP],1,4)) =6106 OR 
+(MID([CFOP],1,4)) =6114 OR 
+(MID([CFOP],1,4)) =6115 OR 
+(MID([CFOP],1,4)) =6117 OR 
+(MID([CFOP],1,4)) =6119 OR 
+(MID([CFOP],1,4)) =6120 OR 
+(MID([CFOP],1,4)) =6502 OR 
+(MID([CFOP],1,4)) =6933 , 'RECEITA',
+if([CFOP] =110210
+OR [CFOP] =110215
+OR [CFOP] =110217
+OR [CFOP] =110220
+OR [CFOP] =110225
+OR [CFOP] =111310
+OR [CFOP] =111710
+OR [CFOP] =111815
+OR [CFOP] =115210
+OR [CFOP] =210210
+OR [CFOP] =210214
+OR [CFOP] =210215
+OR [CFOP] =210225
+OR [CFOP] =211310
+OR [CFOP] =211710
+OR [CFOP] =211814
+OR [CFOP] =215210
+, 'COMPLEMENTO DE COMPRA',
+if( [CFOP] =190700 OR
+[CFOP] =290700
+, 'QUEBRA TECNICA')))) as RELATORIO,
+
+    NUMERO_NF,
+    SITUACAO_NF,
+    CFOP,
+if ([LOJA]=1
+or [LOJA]=2
+or [LOJA]=3
+or [LOJA]=4
+or [LOJA]=5
+or [LOJA]=14
+or [LOJA]=6
+or [LOJA]=9
+or [LOJA]=8
+or [LOJA]=32
+, 'Reg Jataí',
+
+iF( [LOJA]=16
+or [LOJA]=17
+or [LOJA]=15
+or [LOJA]=41
+or [LOJA]=35
+OR [LOJA]=43,
+ 'Reg Rio Verde',
+
+iF( [LOJA]=21
+or [LOJA]=22
+or [LOJA]=12
+or [LOJA]=13
+or [LOJA]=20
+or [LOJA]=23
+, 'Reg Querencia',
+
+iF( [LOJA]=26
+or [LOJA]=27
+or [LOJA]=28
+or [LOJA]=24
+or [LOJA]=25
+or [LOJA]=29
+, 'Reg Canarana',
+
+IF( [LOJA]=11
+or [LOJA]=34
+or [LOJA]=40
+or [LOJA]=42
+, 'Reg Redenção',
+
+iF( [LOJA]=33
+or [LOJA]=37
+or [LOJA]=39
+, 'Reg Paragominas',
+
+IF( [LOJA]=31
+or [LOJA]=30
+, 'Reg Primavera'))))))) AS REGIONAL,    
+    
+    
+IF( [LOJA]=1 OR [LOJA]=2 OR [LOJA]=3 OR [LOJA]=5 OR [LOJA]=6 OR [LOJA]=32 , 'Jatai',
+IF( [LOJA]=4 , 'Mineiros',
+IF( [LOJA]=9 , 'Caiaponia',
+IF( [LOJA]=11 , 'Redencao',
+IF( [LOJA]=12 , 'Xingu',
+IF( [LOJA]=13 , 'confresa',
+IF( [LOJA]=14 , 'Mineiros',
+IF( [LOJA]=15 , 'Rio Verde',
+IF( [LOJA]=16 , 'Rio Verde',
+IF( [LOJA]=17 , 'Rio Verde',
+IF( [LOJA]=20 , 'Querencia',
+IF( [LOJA]=21 , 'Querencia',
+IF( [LOJA]=22 , 'Xingu',
+IF( [LOJA]=23 , 'confresa',
+IF( [LOJA]=24 , 'Gaucha do Norte',
+IF( [LOJA]=25 , 'Canarana',
+IF( [LOJA]=26 , 'Canarana',
+IF( [LOJA]=27 , 'Gaucha do Norte',
+IF( [LOJA]=28 , 'Agua Boa',
+IF( [LOJA]=29 , 'Agua Boa',
+IF( [LOJA]=30 , 'Primavera',
+IF( [LOJA]=31 , 'Primavera',
+IF( [LOJA]=33 , 'Dom Eliseu',
+IF( [LOJA]=34 , 'Santana',
+IF( [LOJA]=35 , 'Jussara',
+IF( [LOJA]=37 , 'Paragominas',
+IF( [LOJA]=38 , 'Paraiso do TO',
+IF( [LOJA]=39 , 'Acailandia',
+IF( [LOJA]=40 , 'Guarai',
+IF( [LOJA]=41 , 'Santa Helena',
+IF( [LOJA]=42 , 'Paraiso',
+IF( [LOJA]=43 , 'Goiatuba' )))))))))))))))))))))))))))))))) AS LOJA,
+
+ IF( [CODIGO_INDEXADOR]=2601
+OR [CODIGO_INDEXADOR]=1000002
+OR [CODIGO_INDEXADOR]=10000008
+OR [CODIGO_INDEXADOR]=10000010
+OR [CODIGO_INDEXADOR]=2602
+OR [CODIGO_INDEXADOR]=10000002
+OR [CODIGO_INDEXADOR]=10000009
+OR [CODIGO_INDEXADOR]=10000013 
+OR [CODIGO_INDEXADOR]=10000004 
+OR [CODIGO_INDEXADOR]=10000006
+, 'BARTER',
+
+'REAIS') AS BARTER,   
+
+IF ([CODIGO_INDEXADOR]=2601
+OR [CODIGO_INDEXADOR]=1000002
+OR [CODIGO_INDEXADOR]=10000008
+OR [CODIGO_INDEXADOR]=10000010
+, 'SOJA',
+
+if( [CODIGO_INDEXADOR]=2602
+OR [CODIGO_INDEXADOR]=10000002
+OR [CODIGO_INDEXADOR]=10000009
+OR [CODIGO_INDEXADOR]=10000013 
+, 'MILHO',
+if( [CODIGO_INDEXADOR]=1000001 
+, 'DÓLAR',
+if( [CODIGO_INDEXADOR]=10000004 
+, 'SORGO',
+if( [CODIGO_INDEXADOR]=10000006
+, 'ALGODÃO','REAIS'))))) as INDEXADOR,
+    CICLO,
+    COD_PRODUTO,
+    DESC_PROD_ORIGINAL,
+    GRUPO_ORIGINAL,
+    SUBGRUPO,
+    COD_PARCEIRO,
+    COD_PROPRIEDADE,
+    COD_VINCULO,
+    NUMERO_PEDIDO,
+    SERIE_PEDIDO,
+    LOJA AS COD_LOJA,
+    PARCEIRO,
+    CGC_TRA,
+    NOME_PES,
+    MapSubString('RemoveAcento_Map', MUNICIPIO) as MUNICIPIO,
+    UF,
+    MARCA_PRODUTO,
+    ITEM_INO,
+    IF( [CFOP]>500000,([QTDE_INO]),
+          ([QTDE_INO]) *-1 ) as QTDE_INO,
+    VALOR_UNITARIO,
+        CUSTO_MEDIO,
+    CUSTO_TABELA,
+    DESCONTO_FIN_TABELA,
+    PRECO_VENDA_TABELA,
+    CODIGO_TABELA,
+    DESCRICAO_TABELA,
+    CODIGO_CONSULTOR,
+    CODIGO_INDEXADOR,
+    VALOR_INDEXADOR,
+    DUPLICATA,
+    COD_CULTURA,
+   // ([VALOR_UNITARIO] * ZN([Qtd Real]))
+   
+    date(floor(VENCIMENTO)) 	as DATA_VENCIMENTO,
+    year(VENCIMENTO)			as [ANO VENCIMENTO],
+    MONTH(VENCIMENTO)			as [MES VENCIMENTO],
+    PARCELAS
+FROM [lib://0.Extract/VW_QLIK_VENDAS_ONLINE6.qvd]
+(qvd);
+left Join
+LOAD
+    PROP_PRO	as COD_PROPRIEDADE,
+    DESC_PRO	as PROPRIEDADE,
+    AREA_PRO	AS AREA_PROPRIEDADE,
+    Replace(LATI_PRO, '.' , ',')as [Latitude],
+    Replace(LONG_PRO, '.' , ',') as [Longitude]
+FROM [lib://0.Extract/PROPRIED_PROPRIEDADES.qvd]
+(qvd);
+LEFT JOIN
+LOAD
+    CODI_CUL		as COD_CULTURA,
+    NOME_CUL		as CULTURA
+   
+FROM [lib://0.Extract/DW_cultura.qvd]
+(qvd);
+
+
+STORE VENDAS_ONLINE6 INTO [lib://1.Transform/VENDAS_ONLINE6.qvd](qvd);
+Drop Table VENDAS_ONLINE6;
+
+MapCodEmpFilialDoCliente:
+MAPPING
+LOAD
+	CODI_TRA,
+	CODI_EMP
+FROM [lib://0.Extract/Siagri/CLIENTE.qvd]
+(qvd);
+
+
+
+Cad_Cliente_Fornecedor_Propriedade:
+LOAD
+	ApplyMap('MapCodEmpFilialDoCliente',CODI_TRA,NULL())	AS	CODI_EMP_FILIAL_PARCEIRO,
+    CODI_TRA,
+    TRAN_TRA,
+    RAZA_TRA,
+    SEXO_TRA,
+    FANT_TRA,
+    ENDE_TRA,
+    NEND_TRA,
+    BAIR_TRA,
+    CODI_MUN AS CODI_MUN_CLIENTE,
+    CEP_TRA,
+    CGC_TRA
+FROM 
+	[lib://0.Extract/TRANSAC.qvd]
+(qvd);
+LEFT JOIN(Cad_Cliente_Fornecedor_Propriedade)
+LOAD
+    CODI_MUN	AS	CODI_MUN_CLIENTE,
+    DESC_MUN	AS	MunicipioPropriedadeCliente,
+    ESTA_MUN	AS	UFPropriedadeCliente
+FROM
+	[lib://0.Extract/TabMunicipio.qvd]
+(qvd);
+LEFT JOIN(Cad_Cliente_Fornecedor_Propriedade)
+LOAD
+    PROP_PRO,
+    CODI_PES,
+    CODI_TRA,
+    DINS_PRO,
+    DESC_PRO,
+    ENDE_PRO,
+    BAIR_PRO,
+    CEP_PRO,
+    FONE_PRO,
+    ARRE_PRO,
+    ATIP_PRO,
+    ANOM_PRO,
+    AEND_PRO,
+    ABAI_PRO,
+    CODI_MUN	AS	CodMunicipio,
+    ACEP_PRO,
+    AREA_PRO,
+    GERE_PRO,
+    SITU_PRO,
+    VLOR_PRO,
+    DUMANUT,
+    ACOD_MUN,
+    TIES_PRO,
+    ALIE_PRO,
+    LOC1_PRO,
+    LATI_PRO,
+    LONG_PRO,
+    Replace(LATI_PRO, '.' , ',')as [Latitude],
+    Replace(LONG_PRO, '.' , ',') as [Longitude],
+    RAZA_PRO
+FROM [lib://0.Extract/PROPRIED_PROPRIEDADES.qvd]
+(qvd);
+LEFT JOIN(Cad_Cliente_Fornecedor_Propriedade)
+LOAD
+    CODI_MUN	AS	CodMunicipio,
+    DESC_MUN	AS	MunicipioPropriedade,
+    ESTA_MUN	AS	UFPropriedade
+FROM
+	[lib://0.Extract/TabMunicipio.qvd]
+(qvd);
+
+
+STORE Cad_Cliente_Fornecedor_Propriedade INTO [lib://1.Transform/Cad_Cliente_Fornecedor_Propriedade.qvd](qvd);
+Drop Table Cad_Cliente_Fornecedor_Propriedade;
+
+//Maps de filiais
+MapFilialCODEMP		:	MAPPING LOAD TEXT(CODI_EMP), MapSubString('RemoveAcento_Map',upper(Filial)) 			FROM [lib://1.Transform/CloverCRM/EmpresaCRM.qvd](qvd); 
+MapRegionalCODEMP	:	MAPPING LOAD TEXT(CODI_EMP), MapSubString('RemoveAcento_Map',upper(Regional))	        FROM [lib://1.Transform/CloverCRM/EmpresaCRM.qvd](qvd); 
+MapDiretoriaCODEMP	:	MAPPING LOAD TEXT(CODI_EMP), Diretoria 			FROM [lib://1.Transform/CloverCRM/EmpresaCRM.qvd](qvd); 
+
+
+
+NOTAS_EMIT_CANCELADAS:
+LOAD
+    Replace(ApplyMap('MapFilialCODEMP',text(CODI_EMP),null()),'PARAISO TO','PARAISO')	AS	Filial,
+    ApplyMap('MapRegionalCODEMP'	,text(CODI_EMP),null())	AS	Regional,	
+    ApplyMap('MapDiretoriaCODEMP'	,text(CODI_EMP),null())	AS	Diretoria,
+
+    REGIONAL,
+    DATAREF,
+    CODI_EMP,
+    CODI_TOP,
+    DESC_TOP,
+    EMITIDAS,
+    CANCELADAS
+FROM [lib://0.Extract/VW_NOTAS_EMIT_CANCELADAS_*.qvd]
+(qvd);
+
+
+
+STORE NOTAS_EMIT_CANCELADAS INTO [lib://1.Transform/NOTAS_EMIT_CANCELADAS.qvd](qvd);
+Drop Table NOTAS_EMIT_CANCELADAS;
+
+VENDAS_FAT_DEV:
+LOAD
+    EMPRESA,
+    REGIONAL,
+    NOTA,
+    SERIE,
+    date(Floor(DATA_NF)) 	as Data_NF,
+    Year(DATA_NF) 			as Ano_NF,
+    Month(DATA_NF) 			as Mês_NF,
+    MonthName(DATA_NF) 		as MêsAno_NF,
+    if(COD_OPER='10000165','Sim',
+    if(COD_OPER='10000145','Sim',
+    if(COD_OPER='40','Sim',
+    if(COD_OPER='10000075','Sim',
+    if(COD_OPER='10000044','Sim','Nao'))))) AS FlagDevolução,
+    COD_OPER,
+    DESC_OPERACAO,
+    FUNCAO_TOPER,
+    TIPO,
+    TOTAL_NOTA,
+    SITUACAO,
+    ORIGEM_NF
+FROM [lib://0.Extract/VW_VECTOR_IND_VENDAS_DEV.qvd]
+(qvd);
+STORE VENDAS_FAT_DEV INTO [lib://1.Transform/VENDAS_FAT_DEV.qvd](qvd);
+Drop Table VENDAS_FAT_DEV;

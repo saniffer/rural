@@ -1,0 +1,453 @@
+///$tab 2 - CRM DIM
+TabConsultor:
+LOAD
+    MapSubString('RemoveAcento_Map',upper(nome))	AS	Consultor,
+    idusuario			AS	IdConsultor,
+	num(num#(chaveerp))	AS	CodConsultor
+FROM
+	[lib://0.Extract/CloverCRM/usuario.qvd]
+(qvd);
+
+CALL subGeraQVD ('TabConsultor','CloverCRM',1);
+
+
+MapCodCicloCiclo:
+MAPPING
+LOAD
+    CODI_CIC,
+    DESC_CIC
+FROM [lib://0.Extract/Siagri/CICLO.qvd]
+(qvd);
+
+
+TabSafra:
+LOAD
+	*,
+	Match(ChaveCiclo,'16-17','17-18','18-19','19-20','20-21','21-22','22-23')	as	OrdemChaveCiclo
+;
+LOAD
+	*,
+    $(vTransformacaoChaveCiclo(Ciclo))	AS	ChaveCiclo
+;
+LOAD
+    idsafra					AS	IdSafra,
+    ApplyMap('MapCodCicloCiclo',num(textbetween(chaveerp,'','#')),null())	AS	Ciclo,
+    codigo					AS	CodigoSafra,
+    descricao				AS	Safra,
+    DATE(datainicio)		AS	DataInicioSafra,
+    DATE(datafim)			AS	DataFimSafra,
+    idcultura				AS	IdCultura,
+    DATE(datalimiteinsumos)	AS	DataLimiteInsumo,
+    bloquearinsumos			AS	FlagBloquearInsumos
+FROM 
+	[LIB://0.Extract/CloverCRM/safra.qvd]
+(qvd);
+
+
+CALL subGeraQVD ('TabSafra','CloverCRM',1);
+
+
+TabParceiro:
+LOAD
+	MapSubString('RemoveAcento_Map',ApplyMap('MapVinculoParceiro',nome,nome))	AS	ParceiroPrincipal,
+    nome					AS	Parceiro,
+    idparceiro				AS	IdParceiro,
+    ativo					AS	FlagAtivo,
+    codigo					AS	CodCliente,
+    tipopessoa				AS	TipoCliente,
+    observacao				AS	Observacao,
+    idlocalpadrao			AS	IdLocal,
+    bloqueado				AS	Bloqueado,
+    contribuinte			AS	FlagContribuinte,
+    bloqueio				AS	FlagBloqueio,
+    idparceirosuperior		AS	IdParceiroSuperior,
+    idfilial				AS	IdFilial,
+    num(num#(chaveerp))		AS	CodParceiro
+FROM 
+	[LIB://0.Extract/CloverCRM/parceiro.qvd](qvd)
+;
+
+CALL subGeraQVD ('TabParceiro','CloverCRM',1);
+
+TabPlantioColheita:
+LOAD
+    idplantiocolheita		AS	IdPlantioColheita,
+    datainicial				AS	DataInicialPlantioColheita,
+    observacao				AS	ObvservacaoPlantioColheita,
+    tipo					AS	TipoPlantioColheita,
+    datafinal				AS	DataFinalPlantioColheita,
+    producao				AS	ValorProducao,
+    area					AS	ValorArea,
+    idatendimento			AS	IdAtendimento,
+    idsafra					AS	IdSafra,
+    produtividadeprevista	as	ValorPropriedadePrevista,
+    potencialdecompra		AS	ValorPotencialCompra,
+    idvinculoimobiliario	AS	IdVinculoImobiliario,
+    ApplyMap('MapUnidadeMedida',idunidadedemedidaprod,null())	AS	UnidadeDeMedidaPropriedade,
+    ApplyMap('MapUnidadeMedida',idunidadedemedidaarea,null())	AS	UnidadeDeMedidaArea
+FROM 
+	[LIB://0.Extract/CloverCRM/plantiocolheita.qvd]
+(qvd);
+
+CALL subGeraQVD ('TabPlantioColheita','CloverCRM',1);
+
+TabTalhaoFisico:
+LOAD
+    idtalhaofisico			AS	IdTalhaoFisico,
+    nome					AS	Talhao,
+    area					AS	ValorArea,
+    IF(cultivavel=1,area,0)	AS	ValorAreaCultivavel,
+    cultivavel				AS	FlagCultivavel,
+    DATE(dataalteracao)		AS	DataAlteracaoTalhaoFisico,
+    ApplyMap('MapUnidadeMedida',idunidadedemedida,null())		AS	UnidadeMedidaAreaTalhao
+FROM 
+	[LIB://0.Extract/CloverCRM/talhaofisico.qvd]
+(qvd);
+
+
+CALL subGeraQVD ('TabTalhaoFisico','CloverCRM',1);
+
+
+
+TabFilial:
+LOAD
+    idparceiro		AS	IdParceiro,
+    idfilial		AS	IdFilial,
+    idlocal			AS	IdLocal,
+    ApplyMap('MapLocalFilialCRM',idlocal,null())	as	Filial
+FROM [LIB://0.Extract/CloverCRM/filial.qvd]
+(qvd);
+
+CALL subGeraQVD ('TabFilial','CloverCRM',1);
+
+
+TabServico:
+LOAD
+    idservico			AS	IdServico,
+    codigo				AS	CodServico,
+    descricao			AS	Servico,
+    peso				AS	PesoServico,
+    ativo				AS	FlagAtivo,
+    requersafra			AS	FlagRequerSafra,
+    requeroportunidade	AS	FlagRequerOportunidade,
+    icone				AS	ServicoIcone
+FROM 
+	[LIB://0.Extract/CloverCRM/servico.qvd](qvd)
+WHERE
+	ativo=1;
+
+CALL subGeraQVD ('TabServico','CloverCRM',1);
+
+
+TabLocal:
+LOAD
+    bairro						AS	Bairro,
+    idlocal						AS	IdLocal,
+    cnpj						AS	CNPJ,
+    cep							AS	CEP,
+    inscricaoestadual			AS	InscricaoEstadual,
+    telefone					AS	Telefone,
+    email						AS	Email,
+    descricao					AS	Local,
+    endereco					AS	Endereco,
+    codigo						AS	CodLocal,
+    inscricaomunicipal			AS	InscricaoMunicipal,
+    DATE(dataendereco)			AS	DataEndereco,
+    DATE(datacadastro)			AS	DataCadastro,
+    DATE(dataultimaatualizacao)	AS	DataUltimaAtualizacao,
+    ativo						AS	EnderecoAtivo,
+    numeroempregado				AS	NumeroEmpregado,
+    idfilialacerto				AS	IdFilialCerto,
+    idcidade					AS	IdCidade,
+    idusuario					AS	IdUsuario,
+    bloqueado					AS	FlagBloqueado,
+    idfilial					AS	IdFilial,
+    idparceiro					AS	IdParceiro,
+    numeroparcelas				AS	NumeroParcelas,
+    altitude					AS	Altitude,
+    eliminado					AS	FlagEliminado,
+    faturamentoentrega			AS	FlagFaturamentoEntrega,
+    cobranca					AS	FlagCobranca,
+    Replace(latitude,'.',',')	AS	LatitudeLocal,
+    Replace(longitude,'.',',')	AS	LongitudeLocal,
+    GeoMakePoint(Replace(latitude,'.',','),Replace(longitude,'.',','))	AS	LocalizacaoLocal
+FROM 
+	[LIB://0.Extract/CloverCRM/local.qvd](qvd)
+WHERE
+	ativo=1;
+
+CALL subGeraQVD ('TabLocal','CloverCRM',1);
+
+
+TabAgenda:
+LOAD
+    idagenda											AS	IdAgenda,
+    idfilial											AS	IdFilial,
+    descricao											AS	DescricaoAgenda,
+    particular											AS	FlagParticular,
+    enviaremail											AS	FlagEnviarEmail,
+    idservico											AS	IdServico,
+    realizada											AS	QtdAgendaRealizada,
+    cancelada											AS	QtdAgendaCancelada,
+    justificativacancelamento							AS	JustificativaCancelamento,
+    TIMESTAMP(datahorainicio)							AS	DataHoraInicio,
+    TIMESTAMP(datahorafim)								AS	DataHoraFim,
+    TIMESTAMP(datahoraagendamento)						AS	DataHoraAgendamento,
+    ApplyMap('MapParceiro',idparceiro,NULL())			AS	Parceiero,
+    idlocal												AS	IdLocalAgenda,
+    ApplyMap('MapUsuario',idusuario,null())				AS	Usuario,
+    ApplyMap('MapUsuario',idusuarioagendador,null())	AS	UsuarioAgendador
+
+FROM
+	[LIB://0.Extract/CloverCRM/agenda.qvd]
+(qvd);
+
+CALL subGeraQVD ('TabAgenda','CloverCRM',1);
+
+
+
+
+TabCidade:
+LOAD
+    idcidade					AS	IdCidade,
+    codigo						AS	CodCidade,
+    descricao					AS	Cidade,
+    idunidadefederativa			AS	IdUnidadeFederativa,
+    altitude					AS	AltidadeCidade,
+    codigoibge					AS	CodCidadeIBGE,
+    Replace(latitude,'.',',')	AS	LatitudeCidade,
+    Replace(longitude,'.',',')	AS	LongitudeCidade,
+    GeoMakePoint(Replace(latitude,'.',','),Replace(longitude,'.',','))	AS	LocalizacaoCidade
+FROM
+	[LIB://0.Extract/CloverCRM/cidade.qvd]
+(qvd);
+
+LEFT JOIN(TabCidade)
+LOAD
+    idunidadefederativa		AS	IdUnidadeFederativa,
+    sigla					AS	SiglaUF,
+    descricao				AS	UF
+FROM 
+	[LIB://0.Extract/CloverCRM/unidadefederativa.qvd]
+(qvd);
+
+DROP FIELD IdUnidadeFederativa FROM TabCidade;
+
+
+CALL subGeraQVD ('TabCidade','CloverCRM',1);
+
+
+TabTipoProduto:
+LOAD
+	idproduto	AS	IdProduto,
+    codigo		AS	CodProduto
+
+FROM [lib://0.Extract/CloverCRM/produto.qvd]
+(qvd);
+
+//Utilizando o grupo de produto do DW
+LEFT JOIN(TabTipoProduto)
+LOAD
+    CODI_PSV		AS	CodProduto,
+    CODI_SBG,
+    CODI_GPR
+FROM [lib://0.Extract/SIAGRI/PRODSERV.qvd]
+(qvd);
+LEFT JOIN(TabTipoProduto)
+LOAD
+	CODI_SBG,
+    CODI_GPR,
+    DESC_SBG	AS	SubGrupoProduto
+FROM
+	[lib://0.Extract/DW/SUBGRUPO.qvd]
+(qvd);
+LEFT JOIN(TabTipoProduto)
+LOAD
+    CODI_GPR,
+    DESC_GPR	AS	GrupoProduto
+FROM [lib://0.Extract/DW/GRUPO.qvd]
+(qvd);
+
+CALL subGeraQVD ('TabTipoProduto','CloverCRM',1);
+
+TabCultura:
+LOAD
+    idcultura					AS	IdCultura,
+    descricao					AS	Cultura,
+    codigo						AS	CodCultura,
+    ativo						AS	FlagAtivo,
+    indicetecnologicomaquina	AS	IndiceTecnologicoMaquina,
+    valormediomaquina			AS	ValorMedioMaquina,
+    chaveibge					AS	ChaveIBGECultura
+FROM 
+	[LIB://0.Extract/CloverCRM/cultura.qvd](qvd)
+WHERE
+	ativo=1;
+
+CALL subGeraQVD ('TabCultura','CloverCRM',1);
+
+
+MapSubGrupoEmGrupo:
+MAPPING
+LOAD
+*
+INLINE 
+[
+SubGrupo,Grupo
+MILHO,SEMENTE DE MILHO
+SOJA,SEMENTE DE SOJA
+FUNGICIDAS MICROBIOLOGICO,ESPECIALIDADES
+INOCULANTES,ESPECIALIDADES
+INSETICIDAS MICROBIOLOGICO,ESPECIALIDADES
+FOLIARES,ESPECIALIDADES
+](DELIMITER IS ',');
+
+MapTipoProdutoCRMSubGrupo:
+MAPPING
+LOAD
+	IdProduto,
+    SubGrupoProduto
+FROM [lib://1.Transform/CloverCRM/TabTipoProduto.qvd]
+(qvd);
+
+//GeradoLogoACima
+MapTipoProdutoCRM:
+MAPPING
+LOAD
+	IdProduto,
+    GrupoProduto
+FROM [lib://1.Transform/CloverCRM/TabTipoProduto.qvd]
+(qvd);
+
+MapGrupoProdutoRedusido:
+MAPPING
+LOAD
+	*
+INLINE [
+Grupo,Nome
+ADUBOS/FERTILIZANTES,Ferts
+DEFENSIVOS,Defs
+SEMENTE DE MILHO,Milho
+SEMENTE DE SOJA,Soja
+ESPECIALIDADES,Espe
+];
+
+
+TabProduto:
+LOAD
+	*,
+    ApplyMap('MapGrupoProdutoRedusido',GrupoPersonalizadoMarketing,null())	as	GrupoProdutoResumido,
+	IF(Match(GrupoProdutoConsideraFoliar,'FOLIARES','MICROBIOLOGICO','SERVICOS TOMADO/PRESTADOS'),GrupoProdutoConsideraFoliar,NULL())	AS	GrupoProdutoEspecialidades
+;
+LOAD
+	*,
+    IF(SubGrupoProduto='FOLIARES','FOLIARES',GrupoProduto)		AS	GrupoProdutoConsideraFoliar,
+	ApplyMap('MapSubGrupoEmGrupo',SubGrupoProduto,GrupoProduto)	AS	GrupoPersonalizadoMarketing,
+    ApplyMap('MapAgrupadorProduto',CodProdutoSiagri,IF(SubGrupoProduto='PRESTACAO DE SERVIÇOS','GEODATA',Produto))		AS	ProdutoAgrupado,
+
+;
+LOAD
+    idproduto				AS	IdProduto,
+    descricao				AS	Produto,
+    num(num#(codigo))		AS	CodProdutoSiagri,
+    ativo					AS	FlagAtivo,
+    idregistrante			AS	IdRegistrante,
+    industrializado			AS	FlagIndustrializado,
+    requersafra				AS	FlagRequerSafra,
+    peso					AS	PesoProduto,
+    quantidadeapresentacao	AS	QtdApresentacaoProduto,
+    quantidadefracao		AS	QtdFracaoProduto,
+    
+    ApplyMap('MapPrincipioAtivo',num(num#(codigo)),'SEM DEPARA')	AS	PrincipioAtivo,
+    
+    
+    ApplyMap('MapCodProdutoMarcaProduto',num(num#(codigo)),null())	AS	MarcaProduto,
+    ApplyMap('MapTipoProdutoCRMSubGrupo',idproduto,'OUTROS')		AS	SubGrupoProduto,
+    ApplyMap('MapTipoProdutoCRM',idproduto,'OUTROS')				AS	GrupoProduto,
+    ApplyMap('MapUnidadeMedida',idunidadedemedida,null())			AS	UnidadeDeMedidaProduto,
+    ApplyMap('MapUnidadeMedida',idunidadedemedidavenda,null())		AS	UnidadeDeMedidaProdutoVenda
+FROM 
+	[LIB://0.Extract/CloverCRM/produto.qvd](qvd)
+;
+CONCATENATE(TabProduto)
+LOAD	DISTINCT
+	'Potencial' as Produto,
+   	'Potencial' as ProdutoAgrupado,
+    'Potencial' as SubGrupoProduto,
+    GrupoPersonalizadoMarketing	as	GrupoPersonalizadoMarketing,
+    GrupoPersonalizadoMarketing	as	CodProdutoSiagri
+RESIDENT
+	TabProduto
+;
+
+CALL subGeraQVD ('TabProduto','CloverCRM',1);
+
+
+MapIdEtapaProcessoDescricao:
+MAPPING
+LOAD
+    idetapaprocesso,
+    descricao
+FROM
+	[lib://0.Extract/CloverCRM/etapaprocesso.qvd]
+(qvd);
+
+
+
+
+Tabpedidovendabloqueio:
+LOAD
+    idpedidovendabloqueio,
+    idpedidovenda					AS	IdPedidoVenda,
+    iditempedidovenda,
+    tipobloqueio,
+    date(floor(datahorabloqueio))			AS DataBloqueio,
+    liberado
+FROM [lib://0.Extract/CloverCRM/pedidovendabloqueio.qvd]
+(qvd);
+LEFT JOIN(Tabpedidovendabloqueio)
+LOAD
+	*,
+    situacao & ' | '&	EtapaProcesso as SituacaoEtapaProcesso
+;
+LOAD
+    idpedidovendabloqueioaprovacao,
+    idpedidovendabloqueio,
+    situacao,
+    idetapaprocesso,
+    ApplyMap('MapIdEtapaProcessoDescricao',idetapaprocesso,null())	as	EtapaProcesso,
+    idusuario,
+    datahora,
+    parecer
+FROM [lib://0.Extract/CloverCRM/pedidovendabloqueioaprovacao.qvd]
+(qvd);
+
+
+
+CALL subGeraQVD ('Tabpedidovendabloqueio','CloverCRM',1);
+
+
+TabUltimaSituacaoPorPedido:
+LOAD
+    IdPedidoVenda,
+    datahora,
+    FirstSortedValue(distinct  situacao,-idetapaprocesso)				as	UltimaSituacao,
+	FirstSortedValue(distinct  EtapaProcesso,-idetapaprocesso)			as	UltimaEtapaProcesso,
+    FirstSortedValue(distinct  SituacaoEtapaProcesso,-idetapaprocesso)	as	UltimaSituacaoEtapaProcesso
+FROM 
+	[lib://1.Transform/CloverCRM/TabPedidovendabloqueio.qvd](qvd)
+GROUP BY
+	IdPedidoVenda,
+    datahora
+;
+INNER JOIN(TabUltimaSituacaoPorPedido)
+LOAD
+	IdPedidoVenda,
+    date(MAX(datahora))	as	datahora
+FROM 
+	[lib://1.Transform/CloverCRM/TabPedidovendabloqueio.qvd](qvd)
+GROUP BY
+	IdPedidoVenda
+;
+
+CALL subGeraQVD ('TabUltimaSituacaoPorPedido','CloverCRM',1);

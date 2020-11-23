@@ -1,0 +1,100 @@
+///$tab 18 - LongShortPlanilha
+MapUnidadePlanilha:
+MAPPING
+LOAD * INLINE [
+UnidadePlanilha,CodigoUnidade
+AÇAILANDIA,39
+AGUA BOA,29
+BARRA DO GARÇA,46
+CAIAPONIA,9
+CANARANA,25
+CATALAO,47
+CONFRESA,13
+DOM ELISEU,33
+GAUCHA,24
+GOIATUBA,43
+GUARAI,40
+GURUPI,44
+JATAI,5
+JUSSARA,35
+MINEIROS,14
+PARAGOMINAS,37
+PARAISO,42
+PARANATINGA,45
+PORTO NACIONAL,98
+PRIMAVERA,30
+QUERENCIA,20
+REDENÇÃO,11
+RIO VERDE,15
+RONDON,38
+SANTA HELENA,41
+SANTANA,34
+XINGU,12
+];
+
+CrossTable(Unidade,Quantidade,3)
+TempPedidoCompraCustoTabela:
+LOAD
+	'Planilha' as Tipo,
+    Código     as ProdutoCodigo,
+    MARCA,
+    AÇAILANDIA,
+	"AGUA BOA",
+	"BARRA DO GARÇA",
+	CAIAPONIA,
+	CANARANA,
+	CATALAO,
+	CONFRESA,
+	"DOM ELISEU",
+	GAUCHA,
+	GOIATUBA,
+	GUARAI,
+	GURUPI,
+	JATAI,
+	JUSSARA,
+	MINEIROS,
+	PARAGOMINAS,
+	PARAISO,
+	PARANATINGA,
+	"PORTO NACIONAL",
+	PRIMAVERA,
+	QUERENCIA,
+	REDENÇÃO,
+	"RIO VERDE",
+	RONDON,
+	"SANTA HELENA",
+	SANTANA,
+	XINGU
+FROM [lib://ComercialRural/CUSTO TABELA DE PREÇO SOJA_2021.xlsx]
+(ooxml, embedded labels, header is 2 lines, table is [BASE COMPRAS.COTAS]);
+
+
+// FROM [lib://ComercialRural/CUSTO TABELA DE PREÇO SOJA _2021.xlsx]
+// (ooxml, embedded labels, header is 2 lines, table is [BASE COMPRAS.COTAS]);
+
+
+PlanilhaLongShortSojaCompras:
+Load *,
+	Hash128(UnidadeCodigo, ProdutoCodigo) as PedidoCompraValorId;
+Load
+	Tipo,
+    ProdutoCodigo,
+	Num(Num#(ApplyMap('MapUnidadePlanilha',Unidade,0))) as UnidadeCodigo,
+    Quantidade,
+    MARCA 				as Fornecedor,
+    'Sem Pedido'		as PedidoNumeroPlanilha,
+    'Sem Data'			as PedidoData,
+    'SAFRA 2020/2021'	as Ciclo
+Resident TempPedidoCompraCustoTabela;
+
+Left Join (PlanilhaLongShortSojaCompras)
+LOAD
+    PedidoCompraValorId,
+    ValorUnitario,
+    Data,
+    Saldo,
+    CustoTabela
+FROM [lib://1.Transform/BaseVendidoSementes.qvd](qvd);
+      
+Store PlanilhaLongShortSojaCompras into [lib://1.Transform/LongShort/PlanilhaLongShortSojaCompras.qvd](qvd);
+Drop Tables PlanilhaLongShortSojaCompras, TempPedidoCompraCustoTabela;

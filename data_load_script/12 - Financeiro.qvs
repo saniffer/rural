@@ -1,0 +1,433 @@
+///$tab 12 - Financeiro
+//Novas extrações Fin @Saniffer 28/10/2020
+
+MapFilialCODEMP:	
+MAPPING 
+LOAD 
+TEXT(COD_EMP) as CODI_EMP, 
+MapSubString('RemoveAcento_Map',upper(Unidade)) 			
+FROM [lib://2.Arquivos/De_Para_Filiais_Financeiro.xlsx]
+(ooxml, embedded labels, table is Filiais);
+
+MapCategoriaCodCliente:
+MAPPING 
+LOAD
+    CODI_CTC,
+    DESC_CTC
+FROM [lib://0.Extract/Siagri/CATEGCLI.qvd]
+(qvd);
+MapCategoriaCliente:
+MAPPING 
+LOAD
+    CODI_TRA,
+   ApplyMap('MapCategoriaCodCliente'	,CODI_CTC,null())	
+FROM [lib://0.Extract/Siagri/CLIENTE.qvd]
+(qvd);
+
+MapDeParaRatingClientes:	
+MAPPING
+LOAD
+   
+    "Cod Cliente",
+     Rating
+FROM [lib://1.Transform/Siagri/DeParaRatingClientes.qvd]
+(qvd);
+
+MapDeParaRatingClientesGrupo:	
+MAPPING
+LOAD 
+    "Cod Cliente",
+    GrupoRating
+FROM [lib://1.Transform/Siagri/DeParaRatingClientes.qvd]
+(qvd);
+
+MapRegionalCODEMP:	
+MAPPING 
+LOAD 
+TEXT(COD_EMP) as CODI_EMP, 
+MapSubString('RemoveAcento_Map',upper(Regional))	        
+FROM [lib://2.Arquivos/De_Para_Filiais_Financeiro.xlsx]
+(ooxml, embedded labels, table is Filiais);
+
+MapUFCODEMP:	
+MAPPING 
+LOAD 
+TEXT(COD_EMP) as CODI_EMP, 
+Estado	        
+FROM [lib://2.Arquivos/De_Para_Filiais_Financeiro.xlsx]
+(ooxml, embedded labels, table is Filiais);
+
+MapCReceberValorAtualizado:
+MAPPING
+LOAD
+    CTRL_REC,
+    VLAB_REC
+FROM [lib://0.Extract/Siagri/Tab_VALOR_ABERTO_RECEBER.qvd]
+(qvd);
+
+MapCReceberValorAberto:
+MAPPING
+LOAD
+    CTRL_REC,
+    VALOR_ABERTO
+FROM [lib://0.Extract/Siagri/Tab_VALOR_ABERTO_RECEBER.qvd]
+(qvd);
+
+MapCReceberVendedor:
+MAPPING
+LOAD
+    text(CODI_PES),
+    NOME_PES
+FROM [lib://0.Extract/Siagri/PESSOAL.qvd]
+(qvd);
+
+
+
+
+C.Receber_Cab:
+Load
+*,
+if(CategoriaGeral='TRADING','TRADING',
+if(CategoriaGeral='INTERCOMPANY','INTERCOMPANY','PRODUTOR RURAL')) 						as Categoria;
+LOAD
+    CODI_TRA																			as [Cod Cliente],
+    CODI_EMP																			as Cod_Emp,
+    Replace(ApplyMap('MapFilialCODEMP',text(CODI_EMP),null()),'PARAISO TO','PARAISO')	as	Loja,
+    ApplyMap('MapRegionalCODEMP'	,text(CODI_EMP),null())								as	Regional,	
+    ApplyMap('MapUFCODEMP'	,text(CODI_EMP),null())										as	UF,	
+    ApplyMap('MapCategoriaCliente'	,CODI_TRA,null()) 									as CategoriaGeral,
+    ApplyMap('MapDeParaRatingClientes'	,text(CODI_TRA),'H - Sem Classif') 				as Rating,
+    ApplyMap('MapDeParaRatingClientesGrupo'	,text(CODI_TRA),'H - Sem Classif') 		    as GrupoRating,
+    NUME_CBR																			as [Numero Documento],
+    SERI_CBR																			as [Serie Documento],
+    Date(floor(DATA_CBR)) 																as Data,
+    year(Date(floor(DATA_CBR))) 														as Ano,
+    Month(Date(floor(DATA_CBR))) 														as Mês,
+    CTRL_CBR,
+    PROP_PRO,
+    CODI_TDO																			as [Cod Tipo Documento]
+FROM [lib://0.Extract/Siagri/CABREC.qvd](qvd);
+
+CALL subGeraQVD ('C.Receber_Cab','Siagri',1);
+
+DeParaRatingClientes:
+LOAD
+    text("Cód Cliente") as [Cod Cliente],
+    "Rating atualizado" as Rating
+FROM [lib://2.Arquivos/Financeiro/Aging-list DE-PARA.xls]
+(biff, embedded labels, table is DeParaRatingClientes$);
+LEFT Join
+LOAD
+    Rating,
+    GrupoRating
+FROM [lib://2.Arquivos/Financeiro/Aging-list DE-PARA.xls]
+(biff, embedded labels, table is DeParaRatingGrupo$);
+
+CALL subGeraQVD ('DeParaRatingClientes','Siagri',1);
+
+Tipo_Documento:
+LOAD
+    DESC_TDO	as [Tipo Documento],
+    TIPO_TDO	as [Tipo TDO],
+    CODI_TDO 	as [Cod Tipo Documento]
+FROM [lib://0.Extract/Siagri/TIPDOC.qvd]
+(qvd);
+CALL subGeraQVD ('Tipo_Documento','Siagri',1);
+
+Tipo_Cobrança:
+LOAD
+    CODI_TCO as [Cod Tipo Cobrança],
+    DESC_TCO as [Tipo Cobrança]
+FROM [lib://0.Extract/Siagri/TIPCOB.qvd]
+(qvd);
+CALL subGeraQVD ('Tipo_Cobrança','Siagri',1);
+
+Cad_Cliente:
+LOAD
+    CODI_TRA							as [Cod Cliente],
+    RAZA_TRA							as [Cliente],
+    CGC_TRA								as [CGC]
+FROM [lib://0.Extract/Siagri/TRANSAC.qvd]
+(qvd);
+CALL subGeraQVD ('Cad_Cliente','Siagri',1);
+
+C.Receber_Item:
+LOAD
+    
+    Date(floor(VENC_REC)) 				as [Data Vencimento],
+    year(Date(floor(VENC_REC))) 		as [Ano Vencimento],
+    Month(Date(floor(VENC_REC))) 		as [Mês Vencimento],
+    if(ApplyMap('MapCReceberValorAberto',CTRL_REC,0)>0,
+    if(Date(floor(VENC_REC))>=Today(),'A Vencer','Vencido'),'Baixado')  as [Situação Titulo], 
+   
+   IF(Date(floor(VENC_REC))<Today() ,
+    	IF(TODAY()-Date(floor(VENC_REC))<=30, 'A. Entre 1 e 30 dias',
+    	IF(TODAY()-Date(floor(VENC_REC))<=60, 'B. Entre 31 e 60 dias',
+    	IF(TODAY()-Date(floor(VENC_REC))<=90, 'C. Entre 61 e 90 dias',
+    	IF(TODAY()-Date(floor(VENC_REC))<=180,'D. Entre 91 e 180 dias',
+    	IF(TODAY()-Date(floor(VENC_REC))<=360,'E. Entre 181 e 360 dias'
+    	)))))) as [Grupo Atraso],
+        
+     IF(Date(floor(VENC_REC))>Today() ,
+    	IF(Date(floor(VENC_REC))-Today()<=30, 'A. Entre 1 e 30 dias',
+    	IF(Date(floor(VENC_REC))-Today()<=60, 'B. Entre 31 e 60 dias',
+    	IF(Date(floor(VENC_REC))-Today()<=90, 'C. Entre 61 e 90 dias',
+    	IF(Date(floor(VENC_REC))-Today()<=180,'D. Entre 91 e 180 dias',
+    	IF(Date(floor(VENC_REC))-Today()<=360,'E. Entre 181 e 360 dias'
+    	)))))) as [Grupo AVencer],      
+  
+  CODI_TCO							as [Cod Tipo Cobrança],
+    CODI_POR,
+    CTRL_CBR,
+    NPAR_REC							as Parcela,
+    CTRL_REC,
+    SITU_REC,
+    VLOR_REC							 as [Valor],
+    ApplyMap('MapCReceberValorAtualizado',CTRL_REC,0) as [Valor Aberto Atualizado], 
+    ApplyMap('MapCReceberValorAberto',CTRL_REC,0) as [Valor Aberto],   
+    if(ApplyMap('MapCReceberValorAberto',CTRL_REC,0)>0,'Aberto','Baixado') as [Status Titulo],
+    DATA_VLR,
+    CODI_IND,
+    HIST_REC							as Historico,
+    COND_CON,
+    DPON_REC,
+    ApplyMap('MapCReceberVendedor'	,text(COD1_PES),'Sem Vendedor')	as	Vendedor1,
+    ApplyMap('MapCReceberVendedor'	,text(COD2_PES),null())	as	Vendedor2,
+    TJUR_REC,
+    DINI_REC,
+    JATV_REC,
+    JAPV_REC,
+    DANT_REC,
+    MULT_REC,
+    VDOF_REC,
+    CTRL_BOL
+    
+FROM [lib://0.Extract/Siagri/RECEBER.qvd]
+(qvd);
+CALL subGeraQVD ('C.Receber_Item','Siagri',1);
+
+
+C.Receber_Recebimentos:
+LOAD
+    CODIGO_PARCEIRO,
+    RAZAO_SOCIAL,
+    CODIGO_LOJA,
+    DIA,
+    year(DATA_PAGAMENTO)  as ANO,
+    Month(DATA_PAGAMENTO) as MES,
+    DATA_PAGAMENTO,
+    DATA_VENCIMENTO,
+    VALOR_PARCELA,
+    NUMERO_DOCUMENTO,
+    CATEGORIA_CLIENTE,
+    TIPO_PAGAMENTO,
+    VALOR_PAGO,
+    TIPO_BAIXA,
+    TIPO,
+    CONTA,
+    CODIGO_COBRANCA,
+    DESCRICAO_COBRANCA,
+    TIPO_DOCUMENTO,
+    MapSubString('RemoveAcento_Map',upper(LOJA))  as LOJA,
+    MapSubString('RemoveAcento_Map',upper(REGIONAL))  as REGIONAL
+    
+FROM [lib://2.Arquivos/Financeiro/TB_RECEBIMENTOS.xlsx]
+(ooxml, embedded labels, table is Planilha1);
+CALL subGeraQVD ('C.Receber_Recebimentos','Siagri',1);
+
+C.Receber_Recebimentos_Forecast:
+LOAD
+    MapSubString('RemoveAcento_Map',upper(LOJA))  as LOJA,
+    MapSubString('RemoveAcento_Map',upper(REGIONAL))  as REGIONAL,
+    ANO,
+    DIA,
+    MES,
+    FORECAST
+FROM [lib://2.Arquivos/Financeiro/TB_RECEBIMENTOS_FORECAST.xlsx]
+(ooxml, embedded labels, table is Planilha1);
+CALL subGeraQVD ('C.Receber_Recebimentos_Forecast','Siagri',1);
+
+
+
+
+
+
+
+
+
+////fim novas transformações C.Receber Saniffer 30102020
+
+
+
+
+
+TabBaixaPagar:
+LOAD
+    SEQU_CPB,
+    CODI_EMP&'-'&CTRL_PAG			AS %ChaveBaixaPAG,
+    date(floor(DPAG_CPB)) 			AS DataPagamentoPAG,
+    year(date(floor(DPAG_CPB))) 	AS AnoPagamentoPAG,
+    month(date(floor(DPAG_CPB))) 	AS MesPagamentoPAG,
+    VLOR_CPB AS VlrBaixa,
+    MULT_CPB AS VlrMulta,
+    JURO_CPB AS VlrJuros,
+    DESC_CPB AS VlrDesconto,
+    ACRE_CPB AS VlrAcrescimo,
+    HIST_CPB AS Historico,
+    VVCA_CPB AS VlrVariacaoCambial,
+    SITU_CPB,
+    CODI_TPG,
+    CTRL_LAN,
+    DATA_VLR
+FROM [lib://0.Extract/Siagri/CPGBAIXA.qvd]
+(qvd)
+Where SITU_CPB = 'N';
+CALL subGeraQVD ('TabBaixaPagar','Siagri',1);
+
+
+C.Pagar:
+LOAD CODI_EMP&'-'&"CTRL_PAG"  AS %ChaveBaixaPAG,
+    CODI_EMP,
+    "COD PARCEIRO",
+    PARCEIRO,
+    LOJA,
+    Date(Floor("DATA VENCIMENTO"))-Date(Floor("DATA LANCAMENTO")) as DiasLancamentoCPagar,
+    Date(Floor("DATA VENCIMENTO")) 	as "DATA VENCIMENTO",
+    Date(Floor("DATA EMISSAO")) 	as "DATA EMISSAO",
+   // Date(Floor("DATA PAGAMENTO")) 	as "DATA PAGAMENTO",
+    Date(Floor("DATA LANCAMENTO")) 	as "DATA LANCAMENTO",
+    Date(Floor("DATA VENCIMENTO"))			AS [Vencimento],
+    year("DATA VENCIMENTO")		            AS [Ano Vencimento],
+    Month("DATA VENCIMENTO")		        AS [Mês Vencimento], 
+    Date(Floor("DATA VENCIMENTO"))-date(Floor(Today())) as Dias,
+    IF(Date(Floor("DATA VENCIMENTO"))<=date(Floor(Today())),'Vencido','A Vencer') as Status,
+    if(Date(Floor("DATA VENCIMENTO"))-date(Floor(Today()))<-180,'Maior que 180 dias',
+    if(Date(Floor("DATA VENCIMENTO"))-date(Floor(Today()))<-150,'Entre 150 e 180 dias',
+    if(Date(Floor("DATA VENCIMENTO"))-date(Floor(Today()))<-120,'Entre 120 e 150 dias',
+    if(Date(Floor("DATA VENCIMENTO"))-date(Floor(Today()))<-90,'Entre 90 e 180 dias',
+    if(Date(Floor("DATA VENCIMENTO"))-date(Floor(Today()))<-30,'Entre 30 e 60 dias',
+    if(Date(Floor("DATA VENCIMENTO"))-date(Floor(Today()))<=0,'Entre 0 e 30 dias', 
+    if(Date(Floor("DATA VENCIMENTO"))-date(Floor(Today()))>180,'Maior que 180 dias',
+    if(Date(Floor("DATA VENCIMENTO"))-date(Floor(Today()))>150,'Entre 150 e 180 dias',
+    if(Date(Floor("DATA VENCIMENTO"))-date(Floor(Today()))>120,'Entre 120 e 150 dias',
+    if(Date(Floor("DATA VENCIMENTO"))-date(Floor(Today()))>90,'Entre 90 e 180 dias',
+    if(Date(Floor("DATA VENCIMENTO"))-date(Floor(Today()))>30,'Entre 30 e 60 dias',
+    if(Date(Floor("DATA VENCIMENTO"))-date(Floor(Today()))>=0,'Entre 0 e 30 dias')))))))))))) as RangeVencimento,
+    TD,
+    TITULO,
+    "TOTAL DOC",
+    " VALOR EM ABERTO",
+    IND,
+    "VALOR COTACAO",
+    "VALOR OM",
+    if(IND='S$',"VALOR OM") AS "VALOR OM S$",
+    VARIACAO,
+    " VALOR ATUALIZADO"
+FROM [lib://0.Extract/Siagri/Fato_CPagar.qvd]
+(qvd);
+
+STORE C.Pagar INTO [LIB://1.Transform/Siagri/Fato_CPagar.qvd] (qvd);
+DROP Table C.Pagar;
+
+// C.Receber:
+// LOAD
+//     MonthName(date(Floor(DATAREFERENCIA)))	AS [MêsAno Ref],
+//     CTRL_CBR,
+//     CTRL_REC,
+//     CODIGO,
+//     CLIENTE,
+//     LJ,
+//     if(Date(Floor(VENCIM.))<=date(Floor(DATAREFERENCIA)),'Vencido','A Vencer') as Status,
+//     Date(Floor(VENCIM.))-date(Floor(DATAREFERENCIA)) as Dias,
+    
+//     if(Date(Floor(VENCIM.))-date(Floor(DATAREFERENCIA))<-180,'Maior que 180 dias',
+//     if(Date(Floor(VENCIM.))-date(Floor(DATAREFERENCIA))<-150,'Entre 150 e 180 dias',
+//     if(Date(Floor(VENCIM.))-date(Floor(DATAREFERENCIA))<-120,'Entre 120 e 150 dias',
+//     if(Date(Floor(VENCIM.))-date(Floor(DATAREFERENCIA))<-90,'Entre 90 e 180 dias',
+//     if(Date(Floor(VENCIM.))-date(Floor(DATAREFERENCIA))<-30,'Entre 30 e 60 dias',
+//     if(Date(Floor(VENCIM.))-date(Floor(DATAREFERENCIA))<=0,'Entre 0 e 30 dias', 
+//     if(Date(Floor(VENCIM.))-date(Floor(DATAREFERENCIA))>180,'Maior que 180 dias',
+//     if(Date(Floor(VENCIM.))-date(Floor(DATAREFERENCIA))>150,'Entre 150 e 180 dias',
+//     if(Date(Floor(VENCIM.))-date(Floor(DATAREFERENCIA))>120,'Entre 120 e 150 dias',
+//     if(Date(Floor(VENCIM.))-date(Floor(DATAREFERENCIA))>90,'Entre 90 e 180 dias',
+//     if(Date(Floor(VENCIM.))-date(Floor(DATAREFERENCIA))>30,'Entre 30 e 60 dias',
+//     if(Date(Floor(VENCIM.))-date(Floor(DATAREFERENCIA))>=0,'Entre 0 e 30 dias')))))))))))) as RangeVencimento,
+    
+//     Date(Floor(VENCIM.))		AS [Vencimento],
+//     year(VENCIM.)		        AS [Ano Vencimento],
+//     Month(VENCIM.)		        AS [Mês Vencimento], 
+//     DA,
+//     TD,
+//     "TIPO DOCUMENTO",
+//     CP,
+//     "COND. PAGAMENTO",
+//     DOCUMENTO,
+//     Date(Floor(MOVIM.))			AS [Movimento],
+//     year(MOVIM.)				AS [Ano Movimento],
+//     Month(MOVIM.)				AS [Mês Movimento],
+//     "VALOR DOCUMENTO",
+//     "VALOR EM ABERTO",
+//     IND,
+//     "VLOR COTACAO",
+//     "VALOR OM",
+//     VARIACAO,
+//     DESC.,
+//     VALOR_JUROS,
+//     if("VALOR ATUALIZADO" <0,'Crédito','Débito') as Natureza,
+//     "VALOR ATUALIZADO"
+// FROM [lib://0.Extract/MENSAL/C_Receb_Posi_Data_*.qvd]
+// (qvd);
+
+// left Join(C.Receber)
+// LOAD
+//     Trading		as CLIENTE,
+//     Trading,
+//     Categoria
+// FROM [lib://2.Arquivos/CAD_SKU_LOJA.xlsx]
+// (ooxml, embedded labels, table is CategoriaCliente);
+
+// STORE C.Receber INTO [LIB://1.Transform/C.Receber.qvd] (qvd);
+// DROP Table C.Receber;
+
+
+
+VW_FINANCEIRO_ADT_DEV:
+LOAD 'ADIANTAMENTO'				AS FLAG,
+    FILIAL,
+    REGIONAL,
+    Date(Floor(EMISSAO)) 		AS EMISSAO,
+    PARCEIRO,
+    DOCUMENTO,
+    PARCELA,
+    if(Date(Floor(VENCIMENTO))<=Today(),'Vencido','A Vencer') as Status,
+    Date(Floor(VENCIMENTO))-Today() as Dias, 
+    if(Date(Floor(VENCIMENTO))-Today()<-180,'Maior que 180 dias',
+    if(Date(Floor(VENCIMENTO))-Today()<-150,'Entre 150 e 180 dias',
+    if(Date(Floor(VENCIMENTO))-Today()<-120,'Entre 120 e 150 dias',
+    if(Date(Floor(VENCIMENTO))-Today()<-90,'Entre 90 e 180 dias',
+    if(Date(Floor(VENCIMENTO))-Today()<-30,'Entre 30 e 60 dias',
+    if(Date(Floor(VENCIMENTO))-Today()<=0,'Entre 0 e 30 dias', 
+    if(Date(Floor(VENCIMENTO))-Today()>180,'Maior que 180 dias',
+    if(Date(Floor(VENCIMENTO))-Today()>150,'Entre 150 e 180 dias',
+    if(Date(Floor(VENCIMENTO))-Today()>120,'Entre 120 e 150 dias',
+    if(Date(Floor(VENCIMENTO))-Today()>90,'Entre 90 e 180 dias',
+    if(Date(Floor(VENCIMENTO))-Today()>30,'Entre 30 e 60 dias',
+    if(Date(Floor(VENCIMENTO))-Today()>=0,'Entre 0 e 30 dias')))))))))))) as RangeVencimento,
+    Date(Floor(VENCIMENTO)) 		AS Vencimento,
+    year(VENCIMENTO)		        AS [Ano Vencimento],
+    Month(VENCIMENTO)		        AS [Mês Vencimento], 
+    SAFRA,
+    MOEDA,
+    CRC_ORIGINAL,
+    CRC_PAGO,
+    CRC_SALDO,
+    CRC_VENCIDO,
+    CRC_A_VENCER,
+    NATUREZA,
+    COTACAO,
+    TIPO,
+    PORTADOR
+FROM [lib://0.Extract/VW_FINANCEIRO_ADT_DEV.qvd]
+(qvd);
+STORE VW_FINANCEIRO_ADT_DEV INTO [LIB://1.Transform/FINANCEIRO_ADT_DEV.qvd] (qvd);
+DROP Table VW_FINANCEIRO_ADT_DEV;

@@ -1,0 +1,134 @@
+///$tab 23 - Análise Margem Mínima
+MapGrupoProdutoMargemMinima:
+MAPPING
+LOAD
+    UPPER("Grupo Produto"),
+    "Margem Minima"
+FROM [lib://2.Arquivos/Análise Margem Minima/Configurador Margem Minima.xlsx]
+(ooxml, embedded labels, table is [Margem Minima]);
+
+
+MapGrupoProdutoPersonalizado:
+MAPPING
+LOAD
+    CodProdutoSiagri,
+    ApplyMap('MapGrupoProdutoMargemMinima',GrupoPersonalizadoMarketing,0)
+FROM
+	[lib://1.Transform/CloverCRM/TabProduto.qvd]
+(qvd);
+
+MapCodParceiroParceiroPrincipal:	MAPPING	LOAD	CodParceiro,	ParceiroPrincipal	FROM	[lib://1.Transform/CloverCRM/TabParceiro.qvd](qvd);
+MapIdSafraChaveCiclo:				MAPPING	LOAD    IdSafra,    	ChaveCiclo			FROM	[lib://1.Transform/CloverCRM/TabSafra.qvd](qvd);
+MapIdSafraCiclo:					MAPPING	LOAD    IdSafra,    	Ciclo				FROM	[lib://1.Transform/CloverCRM/TabSafra.qvd](qvd);
+
+
+
+FatAnáliseMargemMinima:
+LOAD
+	*,
+	hash128(ParceiroPrincipal)		AS	%LinkSegmentacaoParceiro,
+    hash128(PURGECHAR(ParceiroPrincipal,' '))		AS	%LinkPerfilCompraParceiro,
+    Hash128(ParceiroPrincipal,ChaveCiclo)	AS	%LinkRating,
+	ValorVendaTotal * PercMargemMinimaGrupo	AS	ValorLucroItemMinimo
+;
+LOAD
+	IdPedidoVenda,
+    NumeroPedidoVenda,
+    NumeroPedidoVenda		AS	%LinkRangePedidoVenda,
+	NumeroPedidoVenda		AS	%LinkMargemPonderadaPedido,
+    DataPedidoVenda,
+	CodProdutoSiagri,
+	IdFilial,
+	CodParceiro,
+    CodConsultor,
+    IdSafra,
+    
+    ApplyMap('MapCodParceiroParceiroPrincipal',CodParceiro,null())	AS	ParceiroPrincipal,
+    ApplyMap('MapIdSafraChaveCiclo',IdSafra,null())					AS	ChaveCiclo,
+	ApplyMap('MapIdSafraCiclo',IdSafra,null())						AS	Ciclo,
+    ApplyMap('MapGrupoProdutoPersonalizado',CodProdutoSiagri,0)		AS	PercMargemMinimaGrupo,
+    
+    SUM(ValorUnitario)		AS	ValorVendaUnitario,
+    SUM(ValorComissao)		AS	ValorComissao,
+    SUM(ValorVendaTotal - ValorCustoTotal)	AS	ValorLucroItem,
+    SUM(ValorCustoTotal)	AS	ValorCustoTotal,
+    SUM(ValorVendaTotal)	AS	ValorVendaTotal,
+    sum(QtdProduto)			AS	QtdProduto,
+	1 - SUM(ValorCustoTotal)/SUM(ValorVendaTotal)	AS	PercMargemItem
+FROM 
+	[lib://1.Transform/CloverCRM/FatItemPedidoVenda.qvd](qvd)
+GROUP BY
+    NumeroPedidoVenda,
+    DataPedidoVenda,
+	CodProdutoSiagri,
+	IdFilial,
+	CodParceiro,
+    CodConsultor,
+    IdPedidoVenda,
+    IdSafra
+;
+
+DROP FIELDS ParceiroPrincipal, ChaveCiclo,Ciclo;
+
+MargemPonderada:
+LOAD
+	*,
+    IF( PercMargemPonderadaPedido < PercMargemPonderadaMinima,1,0)	AS	FlagPedidosAbaixoMargemMinima,
+	IF( PercMargemPonderadaPedido < PercMargemPonderadaMinima,'Sim','Não')	AS	[Pedido Abaixo Margem Minima],
+;
+LOAD
+	%LinkMargemPonderadaPedido,
+    SUM(ValorLucroItem)/sum(ValorVendaTotal)		AS	PercMargemPonderadaPedido,
+	SUM(ValorLucroItemMinimo)/sum(ValorVendaTotal)	AS	PercMargemPonderadaMinima
+RESIDENT
+	FatAnáliseMargemMinima
+GROUP BY
+	%LinkMargemPonderadaPedido
+;
+
+CALL subGeraQVD ('MargemPonderada','Analise Margem Minima',1);
+
+
+TabRangePedidoVenda:
+LOAD
+	%LinkRangePedidoVenda,
+    SUM(ValorVendaTotal)	AS	ValorVendaTotalRangePedido
+RESIDENT
+	FatAnáliseMargemMinima
+GROUP BY
+	%LinkRangePedidoVenda
+;
+
+
+TabIntervalMatch:
+LOAD
+    Minimo,
+    Replace(Máximo,'Max',9999999999)	AS	Maximo,
+    Range	AS	RangeValorPedidoVenda,
+    RowNo()	as	Ordem
+FROM [lib://2.Arquivos/Análise Margem Minima/Configurador Margem Minima.xlsx]
+(ooxml, embedded labels, table is [Análise Range]);
+
+INNER JOIN IntervalMatch(ValorVendaTotalRangePedido)
+LOAD
+	Minimo,
+    Maximo
+RESIDENT
+	TabIntervalMatch
+ ;
+ 
+INNER JOIN(TabRangePedidoVenda)
+LOAD
+	*
+RESIDENT
+	TabIntervalMatch
+;
+
+DROP TABLE TabIntervalMatch;
+
+DROP FIELD ValorVendaTotalRangePedido;
+
+CALL subGeraQVD ('TabRangePedidoVenda','Analise Margem Minima',1);
+
+
+CALL subGeraQVD ('FatAnáliseMargemMinima','Analise Margem Minima',1);

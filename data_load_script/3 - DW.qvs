@@ -1,0 +1,400 @@
+///$tab 3 - DW
+LoteSaldo:
+LOAD
+    Num(Num#(CODIGO_PRODUTO))			as CODPRODUTO,
+    DESCRICAO_PRODUTO					as DESCRICAO,
+    'Sem codigo do Parceiro'			as CODPARCEIRO,
+    DATA_FABRICACAO 					as DTFABRICACAO,
+    VENCIMENTO_LOTE						as DTVALIDADE,
+    SALDO_LOTE							as QTDENTRADALOTE,
+    'Sem data recebimento'				as DTRECEBIMENTO,
+    CODIG_LOJA							as LOJA,
+    'Sem valor item nota'				as VLITEMNOTA,
+    'Sem operacao'						as OPERACAO,
+    LOTE,    
+    CUSTO_MEDIO							as CUSTOMEDIO,
+    'Sem nota'							as NOTA	
+FROM [lib://0.Extract/LoteSaldo.qvd](qvd);
+
+STORE LoteSaldo INTO [lib://1.Transform/LoteSaldo.qvd](qvd);
+Drop Table LoteSaldo;
+
+TabFilial:
+LOAD
+    REGIONALID			AS	IdRegional,
+    FILIALNOME			AS	Filial,
+    FILIALID			AS	IdFilial,
+    UF					AS	UFFilial
+FROM 
+	[lib://0.Extract/DW/DIMFILIAL.qvd]
+(qvd)
+where (REGIONALID)>0;
+left Join
+LOAD
+    FILIALERP		 AS IdUnidadeERP,
+    FILIALSUPERIORID AS	IdFilial
+FROM [lib://0.Extract/DW/DIMFILIAL.qvd]
+(qvd)
+where isnull(REGIONALID);
+
+LEFT JOIN(TabFilial)
+LOAD
+    REGIONALID		AS	IdRegional,
+    DIRETORIAID		AS	IdDiretoria,
+    REGIONALNOME	AS	Regional
+FROM 
+	[lib://0.Extract/DW/DIMREGIONAL.qvd]
+(qvd);
+LEFT JOIN(TabFilial)
+LOAD
+    DIRETORIAID		AS	IdDiretoria,
+    DIRETORIANOME	AS	Diretoria
+FROM 
+	[lib://0.Extract/DW/DIMDIRETORIA.qvd]
+(qvd);
+
+CALL subGeraQVD ('TabFilial','DW',1);
+
+
+TabReceitaResultado:
+LOAD
+	IF(CFOP > '500000','Faturamento','Devolucao') as FlagDevolucao,
+    FATURAID,
+    NUMEROFATURA,
+    ITEMFATURA,
+    SERIEFATURAMENTO,
+    TIPOFATURA,
+    DESCRICAOFATURA,
+    CLIENTEERP,
+    NOMECLIENTE,
+    VINCULOERP,
+    NOMEVINCULO,
+    FILIALERP,
+    REPFILIALERP,
+    NOMEREPRESENTANTE,
+    date(DTEMISSAO)			as EMISSSAO_RESULT,
+    HORACONSOLIDADO,
+    ORDEMVENDA,
+    ITEMORDEM,
+    MATERIALERP,
+    MARCAERP,
+    DESCRICAOMATERIAL,
+    GRUPOPRODUTOERP,
+    DESCRICAOGRUPO,
+    SUBGRUPOERP,
+    DESCRICAOSUBGRUPO,
+    CICLOERP,
+    DESCRICAOCICLO,
+    CFOP,
+    NFE,
+    DOCUMENTO,
+    SITUACAONFE,
+    DESCRICAOSITUACAONFE,
+    UNIDADECOMERCIAL,
+    QUANTIDADE,
+    IF (TIPO = 'Receita'  AND TIPOCFOPDESCRICAO = 'RECEITA' , VALORLIQUIDO* (IF(CFOP > '500000',QUANTIDADE,(QUANTIDADE)*-1))) AS VALORLIQUIDO,
+    IF (TIPO = 'Orçament'   , VALORLIQUIDO*QUANTIDADE) AS VALORORCAMENTO,
+    VALORLIQUIDO* (IF(CFOP > '500000',QUANTIDADE,(QUANTIDADE)*-1)) as VALORLIQUIDOBRUTO,
+    (IF(CFOP > '500000',QUANTIDADE,(QUANTIDADE)*-1)) AS QUANTIDADEREAL,
+    CUSTOMEDIO,
+    VALORACRESCIMO,
+    CUSTOTABELA,
+    VALORICMS,
+    PRECOVENDA,
+    INDEXADORERP,
+    DATAINDEXADOR,
+    VALORINDEXADOR,
+    MUNPAIERP,
+    MUNICIPIOERP,
+    UFERP,
+    CFOPID,
+    DESCRICAOFILIAL,
+    NOMEMUNICIPIO,
+    DATAATUALIZACAO,
+    REPRESENTANTEERP,
+    TIPOCFOPDESCRICAO,
+    REGIONALNOME,
+    FILIALGERENCIAL,
+    GRUPOPRODUTOID,
+    GRUPOPRODUTONOME,
+    SUBGRUPOID,
+    SUBGRUPONOME,
+    TIPO,
+    PERIODO,
+    FILIALNOME,
+    DIRETORIANOME
+FROM [lib://0.Extract/DW/vw_bi_receitaresultado.qvd]
+(qvd);
+
+CALL subGeraQVD ('TabReceitaResultado','DW',1);
+
+
+
+TabFaturamentoControladoriaCO:
+LOAD
+ 	NUM(NUM#(MATERIALERP))	as	CodProdutoSiagri,
+    TIPORECEITA				as TIPORECEITACO,
+    RECEITAGERENCIAID		as RECEITAGERENCIAIDCO,
+    date(DTEMISSAO) 		as EMISSAOCO,
+    year(DTEMISSAO) 		as ANOCO,
+    Month(DTEMISSAO) 		as MESCO,
+    FILIALERP				as FILIALERPCO,
+    FILIALNOME				as FILIALNOMECO,
+    UF						as UFCO,
+   upper(REGIONALNOME)		as REGIONALNOMECO,
+    DIRETORIANOME			as DIRETORIANOMECO,
+    NUMEROFATURA			as NUMEROFATURACO,
+    SERIEDOCUMENTO			as SERIEDOCUMENTOCO,
+    ITEMFATURAMENTO			as ITEMFATURAMENTOCO,
+    RELATORIO				as RELATORIOCO,
+    CFOP					as CFOP_CO,
+    REPRESENTANTEERP		as REPRESENTANTEERPCO,
+    NOMEREPRESENTANTE		as NOMEREPRESENTANTECO,
+    CLIENTEERP				as CLIENTEERPCO,
+    NOMECLIENTE				as NOMECLIENTECO,
+    GRUPO					as GRUPOCO,
+    SUBGRUPO				as SUBGRUPOCO,
+    MATERIALERP				as MATERIALERPCO,
+    DESCRICAOMATERIAL		as DESCRICAOMATERIALCO,
+    RECEITABRUTA			as RECEITABRUTACO,
+    QUANTIDADE				as QUANTIDADECO,
+    QUANTIDADEREAL			as QUANTIDADEREALCO,
+    VALORUNITARIO			as VALORUNITARIOCO,
+    IMPOSTOS				as IMPOSTOSCO,
+    RECEITALIQUIDA			as RECEITALIQUIDACO,
+    CUSTOMEDIO				as CUSTOMEDIOCO,
+    CMV						as CMVCO,
+    MARGEM					as MARGEMCO,
+    DATAATUALIZACAO			as DATAATUALIZACAOCO,
+    TRANSACAOID				as TRANSACAOIDCO
+FROM [lib://0.Extract/DW/vw_bi_receitacompleta.qvd]
+(qvd);
+
+CALL subGeraQVD ('TabFaturamentoControladoriaCO','DW',1);
+
+
+
+
+FATORCAMENTO:
+LOAD
+    FATURAID,
+    NUMEROFATURA,
+    ITEMFATURA,
+    SERIEFATURAMENTO,
+    TIPOFATURA,
+    DESCRICAOFATURA,
+    CLIENTEERP,
+    NOMECLIENTE,
+    VINCULOERP,
+    NOMEVINCULO,
+    FILIALERP,
+    REPFILIALERP,
+    NOMEREPRESENTANTE,
+    date( DTEMISSAO) as DTEMISSAO,
+    ORDEMVENDA,
+    ITEMORDEM,
+    MATERIALERP,
+    MARCAERP,
+    DESCRICAOMATERIAL,
+    GRUPOPRODUTOERP,
+    DESCRICAOGRUPO,
+    SUBGRUPOERP,
+    DESCRICAOSUBGRUPO,
+    CICLOERP,
+    DESCRICAOCICLO,
+    CFOP,
+    NFE,
+    DOCUMENTO,
+    SITUACAONFE,
+    DESCRICAOSITUACAONFE,
+    UNIDADECOMERCIAL,
+    QUANTIDADE,
+    RECEITA,
+    VALORLIQUIDO,
+    CUSTOMEDIO,
+    VALORACRESCIMO,
+    CUSTOTABELA,
+    VALORICMS,
+    PRECOVENDA,
+    INDEXADORERP,
+    DATAINDEXADOR,
+    VALORINDEXADOR,
+    MUNPAIERP,
+    MUNICIPIOERP,
+    UFERP,
+    CLIENTEID,
+    PRODUTOID,
+    INDEXADORID,
+    REGIONALID,
+    FILIALID,
+    REPRESENTANTEID,
+    MARCAID,
+    CFOPID,
+    DESCRICAOFILIAL,
+    NOMEMUNICIPIO,
+    DATAATUALIZACAO,
+    date(DATAREFERENCIA) as DATAREFERENCIA,
+    REPRESENTANTEERP,
+    TIPOCFOPDESCRICAO,
+    REGIONALNOME,
+    FILIALGERENCIAL,
+    GRUPOPRODUTOID,
+    GRUPOPRODUTONOME,
+    SUBGRUPOID,
+    SUBGRUPONOME,
+    TIPO,
+    PERIODO,
+    FILIALNOME,
+    DIRETORIANOME
+FROM [lib://0.Extract/FATORCAMENTO.qvd]
+(qvd)
+where year(DATAREFERENCIA) ='2019';
+
+CALL subGeraQVD ('FATORCAMENTO','DW',1);
+
+
+TabProduto:
+LOAD
+    CODI_PSV	AS	CodProduto,
+   	CODI_GPR	AS	CodGrupoProduto,
+    CODI_SBG	AS	CodSubGrupoProduto,
+    DESC_PSV	AS	Produto,
+    UNID_PSV	AS	UnidadeProduto
+FROM 	
+	[lib://0.Extract/DW/PRODSERV.qvd]
+(qvd);
+
+LEFT JOIN(TabProduto)
+LOAD
+    CODI_GPR	AS	CodGrupoProduto,
+    DESC_GPR	AS	GrupoProduto
+FROM 
+	[lib://0.Extract/DW/GRUPO.qvd]
+(qvd);
+
+LEFT JOIN(TabProduto)
+LOAD
+    CODI_GPR	AS	CodGrupoProduto,
+    CODI_SBG	AS	CodSubGrupoProduto,
+    DESC_SBG	AS	SubGrupoProduto
+FROM
+	[lib://0.Extract/DW/SUBGRUPO.qvd]
+(qvd);
+
+CALL subGeraQVD ('TabProduto','DW',1);
+
+TabNotaFiscalEntrada:
+LOAD
+	*,
+	IF(DiasPedidoRecebimento<0,'DESVIO','PEDIDOS RECEB NO PRAZO' )	AS	StatusNota,
+    IF(FlagPossuiPedidoCompra=0,NrNotaFiscalEntrada)				AS	NrNotaFiscalEntradaSemPedidoCompra,
+    DataInsercaoPedidoCompra - DataEmissaoNotaEntrada				AS	DiasAteEmissaoPedidoCompra,
+    IF(DataInsercaoPedidoCompra - DataEmissaoNotaEntrada > 0,1,0)	AS	FlagPedidoCompraPosterior
+;
+LOAD
+    TEXT(CODI_EMP)			AS	CodEmpresa,
+    NUME_NFE				AS	NrNotaFiscalEntrada,
+    DREC_NFE - DINSERT 		AS 	DiasPedidoRecebimento,
+    DATE(DINSERT)			AS	DataInsercaoNotaFiscalEntrada,
+    CODI_TRA				AS	CodFornecedor,
+    DATE(floor(DEMI_NFE)) 	AS 	DataReferencia,  
+    DATE(floor(DREC_NFE)) 	AS 	DataRecebimentoNotaEntrada,  
+    DATE(FLOOR(DEMI_NFE))	AS	DataEmissaoNotaEntrada,
+    CCFO_CFO				AS	CFOPPedidoCompra,
+   	HASH128(CODI_EMP,NUME_NFE,DATE(floor(DREC_NFE)))	AS 	%LinkCabecalhoNotaEntrada,
+    ApplyMap('MapPedidoComNotaCompra',CODI_TOP,0)		AS	FlagPossuiPedidoCompra,
+    ApplyMap('MapDataInsercaoPedidoCompraCabecalho',HASH128(CODI_EMP,NUME_NFE,DATE(floor(DREC_NFE))),NULL())	AS	DataInsercaoPedidoCompra
+FROM 
+	[lib://0.Extract/DW/NFENTRA.QVD](qvd);
+CALL subGeraQVD ('TabNotaFiscalEntrada','DW',1);
+
+MapFilialCODEMP		:	MAPPING LOAD TEXT(CODI_EMP), MapSubString('RemoveAcento_Map',upper(Filial)) 			FROM [lib://1.Transform/CloverCRM/EmpresaCRM.qvd](qvd); 
+MapRegionalCODEMP	:	MAPPING LOAD TEXT(CODI_EMP), MapSubString('RemoveAcento_Map',upper(Regional))	        FROM [lib://1.Transform/CloverCRM/EmpresaCRM.qvd](qvd); 
+MapDiretoriaCODEMP	:	MAPPING LOAD TEXT(CODI_EMP), Diretoria 			FROM [lib://1.Transform/CloverCRM/EmpresaCRM.qvd](qvd); 
+
+
+TabItemNotaFiscalEntrada:
+LOAD
+	HASH128(CODI_EMP,NUME_NFE,DATE(floor(DREC_NFE))) AS %LinkCabecalhoNotaEntrada,
+    ApplyMap('MapDataEmissaoNotaEntrada',HASH128(CODI_EMP,NUME_NFE,DATE(floor(DREC_NFE))),NULL())	AS	DataReferencia,
+    Hash128(EMPR_PEC,NUME_PEC)	AS	%LinkPedidos,
+    DATE(floor(DREC_NFE)) 		AS 	DataRecebimentoNotaEntrada,
+    CODI_PSV 					AS	CodProduto,
+    TEXT(CODI_EMP)				AS	CodEmpresa,
+    CODI_TRA					AS	CodFornecedor,
+    QUAN_INF					AS	QtdVendidaNotaEntrada,
+    VLIQ_INF					AS	ValorPrecoUnitario,
+    QUAN_INF * VLIQ_INF			AS	ValorLiquidoNotaEntrada,
+    NUME_PEC					AS	NrPedidoCompra,
+    EMPR_PEC					AS	EmpresaPedidoCompra,
+    ApplyMap('MapFlagPedidoCompra',Hash128(EMPR_PEC,NUME_PEC,CODI_PSV),0)				AS	FlagPedidoCompra,
+    DATE(ApplyMap('MapDataInsercaoPedidoCompra',Hash128(EMPR_PEC,NUME_PEC),NULL()))		AS	DataInsercaoPedidoCompra,
+     Replace(ApplyMap('MapFilialCODEMP',text(CODI_EMP),null()),'PARAISO TO','PARAISO')	AS	Filial,
+    ApplyMap('MapRegionalCODEMP'	,text(CODI_EMP),null())	AS	Regional,	
+    ApplyMap('MapDiretoriaCODEMP'	,text(CODI_EMP),null())	AS	Diretoria
+FROM
+	[lib://0.Extract/DW/INFENTRA.qvd](qvd)
+;
+CALL subGeraQVD ('TabItemNotaFiscalEntrada','DW',1);
+
+TabPedidosVendaperdida:
+LOAD
+	Hash128(CODI_EMP,PEDI_PED)	AS	%LinkPedidosVendaperdida,
+    text(CODI_EMP)				AS	CodEmpresa,
+       Replace(ApplyMap('MapFilialCODEMP',text(CODI_EMP),null()),'PARAISO TO','PARAISO')	AS	Filial,
+    ApplyMap('MapRegionalCODEMP'	,text(CODI_EMP),null())	AS	Regional,	
+    ApplyMap('MapDiretoriaCODEMP'	,text(CODI_EMP),null())	AS	Diretoria,
+
+    PEDI_PED					AS	NumeroPedido,
+    SERI_PED					AS	NumeroSeriePedido,
+    DATE(FLOOR(DEMI_PED))		AS	DataEmissaoPedido,	
+    CODI_PSV					AS	CodProduto,
+    QTDE_IPE					AS	QtdPedida,
+    QPER_IPE					AS	QtdPerdida,
+    QTDE_IPE - QPER_IPE			AS	QtdRestante,
+    VLOR_IPE					AS	ValorItemPedido,
+    VLOR_IPE * QPER_IPE			AS	ValorPerdido,	
+    1							AS	FlagPedidoVendaPerdida
+FROM [lib://0.Extract/DW/VW_QLIK_PEDIDOS_VENDA_PERDIDA.qvd]
+(qvd);
+
+CALL subGeraQVD ('TabPedidosVendaperdida','DW',1);
+
+
+TabEstadoPedido:
+LOAD
+    Text(ESTA_PED)	as EstadoPedidoId,
+    ESTA_PEDIDO 	as EstadoPedido
+FROM [lib://0.Extract/TabEstadoPedido.qvd]
+(qvd);
+
+STORE TabEstadoPedido INTO [lib://1.Transform/TabEstadoPedido.qvd](qvd);
+Drop Table TabEstadoPedido;
+
+TabSituacaoPedido:
+LOAD
+    Text(SITU_PED) 	as SituacaoPedidoId,
+    SITU_PEDIDO		as SituacaoPedido
+FROM [lib://0.Extract/TabSituacaoPedido.qvd]
+(qvd);
+
+STORE TabSituacaoPedido INTO [lib://1.Transform/TabSituacaoPedido.qvd](qvd);
+Drop Table TabSituacaoPedido;
+
+//Tabela de depara para normalizar o nome do grupo de produto
+TabProdutoGrupo:
+LOAD
+*
+INLINE 
+[
+%LinkProdutoGrupo,ProdutoGrupo,OrdemGrupo
+ESPECIALIDADES,ESPECIALIDADES,6
+GRANULADOS,FERTILIZANTES,1
+OUTROS,OUTROS,5
+DEFENSIVOS,QUIMICO,2
+SEMENTE DE MILHO,SEMENTE DE MILHO,3
+SEMENTE DE SOJA,SEMENTE DE SOJA,4
+];
+
+STORE TabProdutoGrupo INTO [lib://1.Transform/TabProdutoGrupo.qvd](qvd);
+Drop Table TabProdutoGrupo;

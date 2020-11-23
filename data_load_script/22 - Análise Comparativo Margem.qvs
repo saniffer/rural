@@ -1,0 +1,330 @@
+///$tab 22 - Análise Comparativo Margem
+MapControleNegociacaoDTINsert:	MAPPING	LOAD	CTRL_NEG,	timestamp(DINSERT)	FROM	[lib://0.Extract/Siagri/NEGOCIACAO.qvd](qvd);
+
+MapCodEmpPediSerieCTRLNEG:	MAPPING	LOAD	HASH128(num(num#(CODI_EMP)),num(num#(PEDI_PED)),num(num#(SERI_PED))), CTRL_NEG	FROM	[lib://0.Extract/Siagri/PEDIDO.qvd]	(qvd);
+MapCodEmpPediSerieDINSERT:	MAPPING	LOAD	HASH128(num(num#(CODI_EMP)),num(num#(PEDI_PED)),num(num#(SERI_PED))), timestamp(DINSERT)	FROM	[lib://0.Extract/Siagri/PEDIDO.qvd]	(qvd);
+
+
+
+tempFatComparativoCRMERP:
+LOAD
+	*,
+    ApplyMap('MapControleNegociacaoDTINsert',NumeroControleNegociacao,null())	AS	DataHoraInsertNegociacaoERP
+;
+LOAD
+	*,
+    ApplyMap('MapCodEmpPediSerieCTRLNEG',%LinkPedidoSiagri,null())	AS	NumeroControleNegociacao,
+	ApplyMap('MapCodEmpPediSerieDINSERT',%LinkPedidoSiagri,null())	AS	DataHoraInsercaoPedidoERP
+;
+LOAD
+    NumeroPedidoOrigemCRM,
+    Hash128(Unidade,num(num#(NumeroPedido)),SeriePedido)	AS	%LinkPedidoSiagri,
+	hash128(NumeroPedidoOrigemCRM,ProdutoId)	AS	%LinkPedidoCrmSiagri,
+    NumeroPedido			AS	NumeroPedidoSiagri,
+    DataEmissao				AS	DataEmissaERP,
+    ProdutoId				AS	IdProdutoERP,
+    Unidade					AS	IdFilialERP,
+    ClienteId				AS	IdParceiroERP,
+    
+    SUM(CustoTabelaProduto)	AS	ValorCustoUnitarioERP,
+    sum(QtdProduto)			AS	QtdProdutoERP,
+    SUM(ReceitaProduto)		AS	ValorPedidoERP,
+	SUM(CustoTabelaProduto * QtdProduto)	AS	ValorCustoTotalERP
+FROM
+	[lib://1.Transform/MARGEMSEMANAL.qvd](qvd)
+WHERE
+	DescricaoPedidoTipo = 'Movimento'
+    AND
+    NOT ISNULL(NumeroPedidoOrigemCRM)
+    AND
+    YEAR(DataEmissao)	> 2018
+    AND
+    ReceitaProduto>0
+GROUP BY
+	NumeroPedidoOrigemCRM,
+    DataEmissao,
+    ProdutoId,
+    Produto,
+    NumeroPedido,
+    Unidade,
+	ClienteId,
+    SeriePedido
+;
+
+DROP FIELDS %LinkPedidoSiagri,NumeroControleNegociacao;
+
+OUTER JOIN(tempFatComparativoCRMERP)
+LOAD
+    %LinkPedidoCrmSiagri,
+    IdPedidoVenda,
+    NumeroPedidoVenda			AS	NumeroPedidoCRM,
+    DataPedidoVenda				AS	DataEmissaoCRM,
+    CodProdutoSiagri			AS	IdProdutoCRM,
+    CodFilial					AS	IdFilialCRM,
+    CodParceiro					AS	IdParceiroCRM,
+    
+    DataHoraFinalizacao			AS	DataHoraFinalizacaoCRM,
+	DataHoraCadastro			AS	DataHoraCadastroCRM,
+    
+    SUM(ValorCustoUnitario)		AS	ValorCustoUnitarioCRM,
+    SUM(ValorCustoTotal)		AS	ValorCustoTotalCRM,
+    sum(QtdProduto)				AS	QtdProdutoCRM,
+    SUM(ValorVendaTotal)		AS	ValorPedidoCRM
+FROM
+	[lib://1.Transform/CloverCRM/FatItemPedidoVenda.qvd](qvd)
+WHERE
+	NOT ISNULL(%LinkPedidoCrmSiagri)
+GROUP BY
+	%LinkPedidoCrmSiagri,
+    IdPedidoVenda,
+    DataPedidoVenda,
+    NumeroPedidoVenda,
+    CodProdutoSiagri,
+    CodFilial,
+	CodParceiro,
+    DataHoraFinalizacao,
+	DataHoraCadastro
+;
+
+
+tempTabCustoUnitarioCRMSemelhante:
+LOAD
+	NumeroPedidoCRM,
+    IdProdutoCRM,
+    ValorCustoUnitarioCRM
+RESIDENT
+	tempFatComparativoCRMERP
+WHERE
+	NOT ISNULL(IdProdutoCRM)
+;
+LEFT JOIN(tempTabCustoUnitarioCRMSemelhante)	LOAD	DISTINCT	CodProduto AS IdProdutoCRM,	CodProdutoSimilar	FROM	[lib://1.Transform/Siagri/TabProdutoSimilar.qvd](qvd);
+
+
+MapCustoUnitarioCRMSemelhante:
+MAPPING
+LOAD
+	HASH128(NumeroPedidoCRM,CodProdutoSimilar),
+	ValorCustoUnitarioCRM
+RESIDENT
+	tempTabCustoUnitarioCRMSemelhante	
+;
+
+DROP TABLE tempTabCustoUnitarioCRMSemelhante;
+
+FatComparativoCRMERP:
+LOAD
+	*,
+    ValorCustoUnitarioFinal * alt(QtdProdutoERP,0)	as	ValorCustoTotalFinal
+;
+LOAD
+	*,
+	Alt(ValorCustoUnitarioCRM,
+    	ALT(ValorCustoUnitarioCRMSemelhante,
+        	ALT(ValorCustoUnitarioERP,0)))	as	ValorCustoUnitarioFinal
+;
+LOAD
+	*,
+	ApplyMap('MapCustoUnitarioCRMSemelhante',%LinkItemPedido,null())	AS	ValorCustoUnitarioCRMSemelhante
+
+;
+LOAD
+	*,
+     hash128(NumeroPedidoCRM,IdProduto)	as	%LinkItemPedido,
+    NumeroPedidoCRM	AS	%LinkTipoDiferença
+;
+LOAD
+	%LinkPedidoCrmSiagri,
+    IdPedidoVenda,
+	NumeroPedidoSiagri,
+    NumeroPedidoCRM	as	NumeroPedidoCRMOrigem,
+
+    IF(ISNULL(NumeroPedidoOrigemCRM),NumeroPedidoCRM,NumeroPedidoOrigemCRM)	AS	NumeroPedidoCRM,
+    
+    Alt(DataEmissaERP,DataEmissaoCRM)			AS	DataEmissao,
+    Alt(IdProdutoERP,IdProdutoCRM)				AS	IdProduto,
+    Alt(IdFilialERP,IdFilialCRM)				AS	IdFilial,
+	Alt(IdParceiroERP,IdParceiroCRM)			AS	IdParceiro,
+    
+    DataHoraInsertNegociacaoERP,
+	DataHoraInsercaoPedidoERP,
+    IdProdutoERP,
+    QtdProdutoERP,
+	ValorPedidoERP,
+    ValorCustoUnitarioERP,
+    ValorCustoTotalERP,
+    
+    DataHoraFinalizacaoCRM,
+	DataHoraCadastroCRM,
+    IdProdutoCRM,
+	QtdProdutoCRM,
+	ValorPedidoCRM,
+    ValorCustoUnitarioCRM,
+	ValorCustoTotalCRM
+RESIDENT
+    tempFatComparativoCRMERP
+;
+
+DROP TABLE tempFatComparativoCRMERP;
+
+/*
+FILTRO(INNER JOIN) PARA QUE APENAS SEJA CARREGADO PEDIDOS QUE
+	->Possuam pelo menos 1 pedido do siagri ( ou seja, um pedido que foi integrado)
+    ->Possuam pelo menos 1 pedido no CRM ( ou seja, não foi criado direto no Siagri)
+   // ->Possua a margem do CRM Diferente da Margem do Siagri
+
+//*/
+INNER JOIN(FatComparativoCRMERP)
+LOAD
+	NumeroPedidoCRM
+WHERE
+	QtdPedidosSiagri>0
+//  AND PercMargemPedidoCRM <> PercMargemPedidoERP
+    and QtdPedidosCRM >0
+;
+LOAD
+	NumeroPedidoCRM,
+    COUNT(NumeroPedidoSiagri)		AS	QtdPedidosSiagri,
+    COUNT(NumeroPedidoCRMOrigem)	AS	QtdPedidosCRM,
+    round(sum(ValorPedidoCRM - ValorCustoTotalCRM) / sum(ValorPedidoCRM),0.001)		AS	PercMargemPedidoCRM,
+    round(sum(ValorPedidoERP - ValorCustoTotalERP) / sum(ValorPedidoERP),0.001)		AS	PercMargemPedidoERP
+RESIDENT
+	FatComparativoCRMERP
+GROUP BY
+	NumeroPedidoCRM
+;
+//    
+DROP FIELD NumeroPedidoCRMOrigem;
+
+
+TabTipoProblema:
+LOAD
+	%LinkTipoDiferença,
+    1							AS	FlagItensAlterados,
+    'Itens inseridos/removidos'	AS	TipoDiferenca
+WHERE
+	QtdItensCRM <> QtdItensERP 
+;
+LOAD
+	%LinkTipoDiferença,
+	COUNT(DISTINCT IdProdutoCRM) as QtdItensCRM,
+	COUNT(DISTINCT IdProdutoERP) as QtdItensERP
+RESIDENT
+	FatComparativoCRMERP
+GROUP BY
+	%LinkTipoDiferença
+;
+
+
+
+tempMapPedidoItensSiagriSimilar:
+LOAD DISTINCT
+	%LinkTipoDiferença,
+	IdProdutoERP
+RESIDENT
+    FatComparativoCRMERP
+;
+
+LEFT JOIN(tempMapPedidoItensSiagriSimilar)	LOAD	DISTINCT	CodProduto AS IdProdutoERP,	CodProdutoSimilar	FROM	[lib://1.Transform/Siagri/TabProdutoSimilar.qvd](qvd);
+
+
+MapPedidoItensSiagriSimilar:
+MAPPING
+LOAD	DISTINCT
+	HASH128(%LinkTipoDiferença,CodProdutoSimilar),
+    1
+RESIDENT
+	tempMapPedidoItensSiagriSimilar
+WHERE
+	NOT ISNULL(CodProdutoSimilar)
+;
+	
+DROP TABLE tempMapPedidoItensSiagriSimilar;
+
+MapTipoDiferencaIdProdutoSiagri: 
+MAPPING
+LOAD DISTINCT
+	hash128(%LinkTipoDiferença,	IdProdutoERP),
+    1
+RESIDENT
+	FatComparativoCRMERP
+ ;
+
+CONCATENATE(TabTipoProblema)
+LOAD
+	%LinkTipoDiferença,
+    1	AS	FlagSubstituicaoDeFamiliar,
+	'Substituição Similar'	AS	TipoDiferenca
+WHERE
+	ISNULL(IdProdutoERP) AND FlagExisteSemelhante=1
+;
+LOAD
+	%LinkTipoDiferença,
+	IdProdutoCRM,
+    IdProdutoERP,
+	//  ApplyMap('MapTipoDiferencaIdProdutoSiagri',HASH128(%LinkTipoDiferença,IdProdutoCRM),0)	AS	FlagProdutoEstaNoSiagri,
+    ApplyMap('MapPedidoItensSiagriSimilar',HASH128(%LinkTipoDiferença,IdProdutoCRM),0)		AS	FlagExisteSemelhante
+RESIDENT
+	FatComparativoCRMERP
+WHERE
+	NOT ISNULL(IdProdutoCRM)
+;
+
+CONCATENATE(TabTipoProblema)
+LOAD
+	%LinkTipoDiferença,
+    1			AS	FlagQtdVendidaAlterada,
+    'Quantidade Vendida Diferente'	AS	TipoDiferenca
+WHERE
+	QtdProdutoCRM <> QtdProdutoERP 
+;
+LOAD
+	%LinkTipoDiferença,
+	SUM(QtdProdutoCRM) 	AS QtdProdutoCRM,
+	SUM(QtdProdutoERP) 	AS QtdProdutoERP
+RESIDENT
+	FatComparativoCRMERP
+GROUP BY
+	%LinkTipoDiferença
+;
+CONCATENATE(TabTipoProblema)
+LOAD
+	[%LinkTipoDiferença],
+    1						AS	FlagDemoraIntegracao,
+    'Demora na integração'	AS	TipoDiferenca
+WHERE
+	interval(fabs(DataHoraFinalizacaoCRM-DataHoraInsertNegociacaoERP),'DD hh:mm:ss') > time('23:59:59')
+;
+LOAD
+	[%LinkTipoDiferença],
+    MIN(DataHoraFinalizacaoCRM)			AS	DataHoraFinalizacaoCRM,
+    MIN(DataHoraInsertNegociacaoERP)	AS	DataHoraInsertNegociacaoERP
+RESIDENT
+	FatComparativoCRMERP
+GROUP BY
+	%LinkTipoDiferença
+;
+	
+
+MapPedidosComProblemas:	MAPPING	LOAD	DISTINCT	%LinkTipoDiferença, 1	RESIDENT	TabTipoProblema;
+
+CONCATENATE(TabTipoProblema)
+LOAD	DISTINCT
+	%LinkTipoDiferença,
+     1							AS	FlagProblemaNaoIdentificado,
+	'Problema Não Identificado'	AS	TipoDiferenca
+RESIDENT
+	FatComparativoCRMERP
+WHERE
+	//Pedidos sem problmas classificados devem ser taxados como 'Não Identificado';
+	ApplyMap('MapPedidosComProblemas',%LinkTipoDiferença,0)	=0
+;
+
+
+
+
+
+STORE TabTipoProblema INTO [lib://1.Transform/ComparativoMargem ERP vs CRM/TabTipoProblema.qvd](qvd);
+DROP TABLE TabTipoProblema;
+
+STORE FatComparativoCRMERP INTO [lib://1.Transform/ComparativoMargem ERP vs CRM/FatComparativoCRMERP.qvd](qvd);
+DROP TABLE FatComparativoCRMERP;

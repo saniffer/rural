@@ -1,0 +1,414 @@
+///$tab 7 - Logistica
+VW_BI_ESTOQUE:
+LOAD
+    ESTOQUEID,
+    TIPOESTOQUE,
+    ARMAZENAGEMERP,
+    UNIDADENOME,
+    ARMAZENAGEMNOME,
+    UNIDADEESTOQUEERP,
+    UNIDADEESTOQUE,
+    REGIONALNOME,
+    GRUPOPRODUTOID,
+    GRUPOPRODUTONOME,
+    SUBGRUPOID,
+    SUBGRUPONOME,
+    GRUPOERPNOME,
+    SUBRUPOERPNOME,
+    PRODUTOERP,
+    NOMEPRODUTO,
+    FORNECEDORERP,
+    NOMEFORNECEDOR,
+    NOMEMARCA,
+    LOTE,
+    DATAFABRICACAO,
+    DATAVENCIMENTO,
+    SALDO,
+    CUSTOMEDIOUNIDADE,
+    CUSTOMEDIOREGIONAL,
+    CUSTOMEDIOGERAL,
+    CUSTOMEDIONOTAENTRADA,
+    CUSTOMEDIONOTASAIDA,
+    CUSTOTABELAPRECO,
+    CUSTOMEDIO,
+    TOTALCUSTO,
+    TIPOCUSTOMEDIO,
+    DATAATUALIZACAO,
+    ESTADOESTOQUE,
+    MESVENCIMENTO,
+    ANOVENCIMENTO,
+    PERIODOVENCIMENTO
+FROM [lib://0.Extract/VW_BI_ESTOQUE.qvd](qvd);
+STORE VW_BI_ESTOQUE INTO [lib://1.Transform/VW_BI_ESTOQUE.qvd](qvd);
+Drop Table VW_BI_ESTOQUE;
+
+BaseVendido:
+Load
+	*,
+    (Quantidade - Alt(QtdPerdida,0) - Alt(QtdDesfazimento,0)) * (Alt(VlrUnitario,0) - Alt(VlrDesconto,0)) as VlrVendida,
+    (QtdFaturada * (VlrUnitario - Alt(VlrDesconto,0))) 												      as VlrFaturado,    
+    (Alt(NormatizadaOriginal,0) - Alt(NormatizadaPerdida,0) - Alt(NormatizadaDesfazimento,0)) 		      as NormatizadaVendida,
+    (Quantidade - QtdPerdida - QtdDesfazimento)  													      as QtdVendida,
+    
+;
+LOAD
+	SUBGRUPOID								as CodigoSubGrupo,
+    SUBGRUPOERP 							as CodigoSubGrupoERP,
+	PRECOBASE								as PrecoBase,	
+	PERCENTUALMARGEM						as PercentualMargem,
+    NUMEROCONTRATOBARTER					as NumeroContratoBater,				
+	GRUPOPRODUTOID							as CodigoGrupoProduto,
+	ESTADOPEDIDO							as EstadoPedio,
+    ESTADOPEDIDONOME						as EstadoPedidoNome,
+	PEDIDOVENDAID 							as CodigoPedidoVenda,
+	QUANTIDADEENTREGUE						as QtdFaturada,
+    VALORUNITARIO							as VlrUnitario,
+    VALORDESCONTO							as VlrDesconto,
+	NORMATIZADAORIGINAL						as NormatizadaOriginal,
+    NORMATIZADAPERDIDA						as NormatizadaPerdida,
+    NORMATIZADADESFAZIMENTO					as NormatizadaDesfazimento,
+    QUANTIDADEDESFAZIMENTO					as QtdDesfazimento,
+    QUANTIDADEPERDIDA						as QtdPerdida,
+    QUANTIDADE								as Quantidade,
+    INDEXADOR								as Indexador,
+	STATUSPEDIDO 							as StatusPedido,
+    NUMEROPEDIDO 							as NumeroPedido,
+    Date(Floor(DATAEMISSAO)) 				as DataEmissao,
+    Year(DATAEMISSAO)						as AnoEmissao,
+    CICLOERP 								as CodigoCiclo,
+    CICLONOME 								as CicloNome,
+    GRUPOERP 								as CodigoGrupo,
+    GRUPONOME 								as GrupoNome,    
+    SUBGRUPONOME 							as SubGrupoNome,
+    GRUPOPRODUTOGERENCIAL 					as GrupoGerencial,
+    SUBGRUPOGERENCIAL 						as SubGrupoGerencial,
+    VENDEDOREMP 							as CodigoUnidadeVendedor,
+    VENDEDORERP 							as CodigoVendedor,
+    VENDEDORNOME 							as NomeVendedor,
+    UNIDADEERP 								as CodigoUnidade,
+    NOMEUNIDADE 							as UnidadeNome,
+    REGIONALNOME							as Regional,
+    CLIENTEERP 								as CodigoCliente,
+    CLIENTENOME 							as ClienteNome,
+    CLIENTEVINCULOERP 						as CodigoVinculoCliente,
+    CLIENTEVINCULONOME 						as VinculoClienteNome,
+    ENDERECOCLIENTE 						as EnderecoCliente,
+    MUNICIPIOCLIENTE 						as MunicipioCliente,
+    UFCLIENTE 								as UFCliente,
+    PROPRIEDADEDESCRICAO 					as PropriedadeCliente,
+    PROPRIEDADEENDERECO 					as PropriedadeEndereco,
+    PROPRIEDADEMUNICIPIO 					as PropriedadeMunicipio,
+    PROPRIEDADEUF 							as PropriedadeClienteUF,
+    FORNECEDORERP 							as CodigoFornecedor,
+    FORNECEDORNOME 							as FornecedorNome,
+    FORNECEDORVINCULOERP 					as CodigoVinculoFornecedor,
+    FORNECEDORVINCULONOME 					as VinculoFornecedorNome,
+    NOMEMARCA 								as MarcaNome,
+    PRODUTOERP 								as CodigoProduto,
+    PRODUTONOME 							as ProdutoNome,
+    CONDICAOPAGAMENTOERP	 				as CodigoCondicaoPagamento,
+    CONDICAOPAGAMENTO 						as CondicaoPagamentoNome,
+    SALDO 									as QtdSaldo,
+    UNIDADEPRODUTO 							as UnidadeProduto,
+    VALORTOTAL 								as VlrOriginal,        
+    VALORSALDO 								as VlrSaldo,    
+    Date(Floor(INDEXADORDATA)) 				as IndexadorData,
+    INDEXADORVALOR 							as IndexadorVlr,
+    CUSTOTABELA 							as CustoTabela,
+    CUSTOMEDIO 								as CustoMédio,
+    Date(Floor(DATAVENCIMENTO)) 			as DataVencimento,
+    SITUACAOPEDIDO 							as CodigoSituacaoPedido,
+    SITUACAOPEDIDONOME 						as SituacaoPedidoNome,
+    Date(Floor(DATANEGOCIACAOC)) 			as DataNegociacaoContrato,
+    COTACAONEGOCIACAOC 						as CotacaoNegociacaoContrato,
+    Date(Floor(DATAPREVISAOENTREGA)) 		as DataPrevisaoEntrega,
+    CODIGOTABELA 							as CodigoTabela,
+    TABELANOME 								as NomeTabela,
+    PRECOTABELA 							as PrecoTabela,
+    IDENTIFICACAOCRM 						as IdentificacaoCRM,
+    TIPO 									as Tipo,
+    SERIE 									as Serie,
+    TIPOOPERACAOERP 						as CodigoTipoOperacao,
+    TIPOOPERACAONOME 						as DescricaoTipoOperacao,
+    NUMEROPEDIDOORIGEM 						as NumeroPedidoOrigem,
+    QUANTIDADEDEVOLVIDA 					as QuantidadeDevolvida,
+    Date(Floor(ULTIMAALTERACAO)) 			as UltimaAlteracao,
+    USUARIOINCLUSAO 						as UsuarioInclusao,
+    USUARIOALTERACAO 						as UsuárioAlteracao,
+    DOCUMENTOPARCEIRO 						as DocumentoCLiente,
+    Date(Floor(DATAATUALIZACAO)) 			as DataAtualizacao,
+    Date(Floor(DATABASE)) 					as DataBase,
+    NORMATIZADAENTREGUE 					as NormatizadaFaturada,
+    NORMATIZADADEVOLVIDA 					as NormatizadaDevolvida,
+    NORMATIZADASALDO 						as NormatizadaSaldo    
+FROM [lib://0.Extract/BaseVendido/BaseVendido.qvd](qvd);
+STORE BaseVendido INTO [lib://1.Transform/BaseVendido.qvd](qvd);
+Drop Table BaseVendido;
+
+ProdutoSKU:
+Load *, num(Num#(CHAVE1,'0000000')) AS PRODUTOID;
+	Load *,
+    	Mid(CHAVE,FindOneOf(CHAVE,'-')+1, 10) as CHAVE1;
+LOAD
+    CHAVE,
+    Upper(UNIDADEERP)			as UNIDADEERP,
+    Upper(COD)					as COD,
+    Upper(DESCRICAO_PRODUTO)	as DESCRICAO_PRODUTO,
+    Upper(AGRUPADOR)			as AGRUPADOR,
+    Upper(PRINCIPIO_ATIVO)		as PRINCIPIO_ATIVO,
+    Upper(PORT_DESC)			as PORT_DESC,
+    Upper(FORNECEDOR)			as FORNECEDOR
+FROM [lib://0.Extract/ProdutoSKU.qvd](qvd);
+
+Drop Fields CHAVE, CHAVE1 from ProdutoSKU;
+
+STORE ProdutoSKU INTO [lib://1.Transform/ProdutoSKU.qvd](qvd);
+Drop Table ProdutoSKU;
+
+Lote:
+LOAD
+    LOJA,
+    "COD PRODUTO"			as CODPRODUTO,
+    DESCRICAO,
+    "COD PARCEIRO"			as CODPARCEIRO,
+    FORNECEDOR,
+    LOTE,
+    date("DT FABRICAÇÃO")		as DTFABRICACAO,
+    date("DT VALIDADE")			as DTVALIDADE,
+    date("DT RECEBIMENTO NT")	as DTRECEBIMENTONT,
+    "QTDE ENTRADA LOTE"			as QTDENTRADALOTE,
+    "VLOR ITEM NOTA"			as VLITEMNOTA,
+    NOTA,
+    OPERACAO
+FROM [lib://0.Extract/Lote.qvd](qvd);
+STORE Lote INTO [lib://1.Transform/Lote.qvd](qvd);
+Drop Table Lote;
+
+
+FATPEDIDOCOMPRAS:
+LOAD
+    UNIDADEERP&'-'&MID(MATERIALERP,2,6) as PRODUTOID, 
+    PEDIDOCOMPRAID,
+    NUMEROPEDIDO,
+    TIPOPERACAO,
+    NOMETIPOOPERACAO,
+    SIGLAERP,
+    CICLO,
+    UNIDADEERP,
+    NOMEUNIDADE,
+    FORNECEDORERP,
+    NOMEFORNECEDORERP,
+    MUNICIPIOFORNECEDOR,
+    UFFORNECEDOR,
+    VINCULOERP,
+    NOMEVINCULO,
+    MATERIALERP,
+    DESCRICAOERP,
+    GRUPOERP,
+    NOMEGRUPO,
+    SUBGRUPOERP,
+    NOMESUBGRUPO,
+    DATAPEDIDO,
+    CONDICAOPAGAMENTOERP,
+    NOMECONDICAOPAGAMENTO,
+    DESCRICAOINDICE,
+    DATAPTAX,
+    VALORPTAX,
+    VALORBRUTOUNITARIO,
+    QUANTIDADEPEDIDO,
+    QUANTIDADERECEBIDA,
+    QUANTIDADEPERDIDA,
+    QUANTIDADEDEVOLVIDO,
+    QUANTIDADESALDO,
+    UNIDADE,
+    VALORBRUTOPEDIDO,
+    VALORBRUTORECEBIDOPEDIDO,
+    VALORDEVOLVIDOPEDIDO,
+    VALORPERDIDO,
+    VALORSALDOPEDIDO,
+    NFENTRADA,
+    NFENTRADAITEM,
+    DATAEMISSAO,
+    DATAVENCIMENTO,
+    DATAINSERCAO,
+    NUMEROPEDIDOFORNECEDOR,
+    DATAATUALIZACAO,
+    DATALANCAMENTONF,
+    DATARECEBIMENTONF,
+    TIPOFRETE,
+    VALORLIQRECEBIDODOCUMENTO
+FROM [lib://0.Extract/FATPEDIDOCOMPRAS.qvd](qvd);
+STORE FATPEDIDOCOMPRAS INTO [lib://1.Transform/FATPEDIDOCOMPRAS.qvd](qvd);
+Drop Table FATPEDIDOCOMPRAS;
+
+VW_PEDIDOVENDA:
+LOAD
+    UNIDADEERP&'-'&PRODUTOERP as PRODUTOID, 
+    PEDIDOVENDAID,
+    TIPO,
+    UNIDADEERP,
+    NOMEUNIDADE,
+    REGIONALNOME,
+    NUMEROPEDIDO,
+    SERIE,
+    DATAEMISSAO,
+    DATABASE,
+    DATAVENCIMENTO,
+    NUMEROCONTRATOBARTER,
+    NUMEROPEDIDOORIGEM,
+    SITUACAOPEDIDO,
+    SITUACAOPEDIDONOME,
+    CLIENTEERP,
+    CLIENTENOME,
+    DOCUMENTOPARCEIRO,
+    CLIENTEVINCULOERP,
+    CLIENTEVINCULONOME,
+    ENDERECOCLIENTE,
+    MUNICIPIOCLIENTE,
+    UFCLIENTE,
+    PROPRIEDADEDESCRICAO,
+    PROPRIEDADEENDERECO,
+    PROPRIEDADEMUNICIPIO,
+    PROPRIEDADEUF,
+    FORNECEDORERP,
+    FORNECEDORNOME,
+    FORNECEDORVINCULOERP,
+    FORNECEDORVINCULONOME,
+    NOMEMARCA,    
+    PRODUTOERP,
+    PRODUTONOME,
+    GRUPOERP,
+    GRUPONOME,
+    SUBGRUPOERP,
+    SUBGRUPONOME,
+    CICLOERP,
+    CICLONOME,
+    VENDEDOREMP,
+    VENDEDORERP,
+    VENDEDORNOME,
+    TIPOOPERACAOERP,
+    TIPOOPERACAONOME,
+    CONDICAOPAGAMENTOERP,
+    CONDICAOPAGAMENTO,
+    CODIGOTABELA,
+    TABELANOME,
+    CUSTOTABELA,
+    CUSTOMEDIO,
+    PRECOBASE,
+    PERCENTUALMARGEM,
+    INDEXADOR,
+    INDEXADORDATA,
+    INDEXADORVALOR,
+    ULTIMAALTERACAO,
+    USUARIOINCLUSAO,
+    USUARIOALTERACAO,
+    GRUPOPRODUTOID,
+    GRUPOPRODUTOGERENCIAL,
+    SUBGRUPOID,
+    SUBGRUPOGERENCIAL,
+    QUANTIDADE,
+    QUANTIDADEENTREGUE,
+    QUANTIDADEDEVOLVIDA,
+    QUANTIDADEPERDIDA,
+    QUANTIDADEDESFAZIMENTO,
+    SALDO,
+    VALORUNITARIO,
+    VALORDESCONTO,
+    VALORSALDO,
+    VALORTOTAL,
+    DATAATUALIZACAO,
+    STATUSPEDIDO,
+    ESTADOPEDIDO,
+    ESTADOPEDIDONOME,
+    UNIDADEPRODUTO
+FROM [lib://0.Extract/VW_PEDIDOVENDA.qvd](qvd);
+STORE VW_PEDIDOVENDA INTO [lib://1.Transform/VW_PEDIDOVENDA.qvd](qvd);
+Drop Table VW_PEDIDOVENDA;
+
+TB_ESTOQUE_POSICAO:
+Load *,
+ 	if(DATAVENCIMENTO < Today(), 'VENCIDO'
+    ,If(DATAVENCIMENTO < Today()+90, 'A VENCER 90 DIAS'
+    ,IF(DATAVENCIMENTO >= Today()+90 AND Year(DATAVENCIMENTO)=Year(Today()), 'A VENCER '&Year(Today())
+    ,If(DATAVENCIMENTO >= yearend(Today()) , 'A VENCER PÓS '&Year(Today())
+    ,If(IsNull(DATAVENCIMENTO), 'AG'
+    )))))  
+   AS FlagAvencerAnoAtual;
+LOAD
+    UNIDADEESTOQUEERP&'-'&Num(NUM#(PRODUTOERP)) as PRODUTOID, 
+    Num(NUM#(PRODUTOERP),'0000000') as PRODUTOERP,
+    UNIDADEESTOQUEERP,
+    LOTE,
+    ESTOQUEID,						
+    REGIONALNOME,			
+    UNIDADENOME,				
+    NOMEMARCA as FORNECEDORNOME,			
+    if(SUBRUPOERPNOME='FOLIARES','FOLIARES',GRUPOERPNOME) AS GRUPOERPNOME,
+    IF(WildMatch(GRUPOPRODUTONOME,'SEMENTE*'),1,0)  AS FlagGrupoSemente,
+    SUBRUPOERPNOME,
+    SUBGRUPONOME,
+    ESTADOESTOQUE,			
+    ANOVENCIMENTO,			
+    CUSTOMEDIO,				
+    IF(TIPOESTOQUE='AG TERCEIROS','AG','PROPRIO')	AS TIPOESTOQUE,					
+    TOTALCUSTO,				
+    SALDO as SALDOFINAL,					
+    Date(DATAVENCIMENTO) AS DATAVENCIMENTO,
+    ARMAZENAGEMERP,
+    ARMAZENAGEMNOME,
+    UNIDADEESTOQUE,
+    NOMEPRODUTO,
+    PERIODOVENCIMENTO,
+    GRUPOPRODUTOID,
+    GRUPOPRODUTONOME,
+    SUBGRUPOID,
+    FORNECEDORERP,
+    NOMEFORNECEDOR,
+    CUSTOMEDIOUNIDADE,
+    CUSTOMEDIOREGIONAL,
+    CUSTOMEDIOGERAL,
+    CUSTOMEDIONOTAENTRADA,
+    CUSTOMEDIONOTASAIDA,
+    CUSTOTABELAPRECO,
+    TIPOCUSTOMEDIO,
+    NOMEMARCA,    
+    Date(Floor(DATAATUALIZACAO),'DD/MM/YYYY') AS DATAATUALIZACAO
+FROM [lib://0.Extract/TB_ESTOQUE_POSICAO.qvd](qvd);
+STORE TB_ESTOQUE_POSICAO INTO [lib://1.Transform/TB_ESTOQUE_POSICAO.qvd](qvd);
+Drop Table TB_ESTOQUE_POSICAO;
+
+
+LatitudeLongitude:
+LOAD
+    TextBetween(chaveerp,'#','') as UNIDADEERP,
+    Replace(latitude,'.',',')	 as Latitude,
+    Replace(longitude,'.',',')	 as Longitude
+FROM [lib://0.Extract/LatitudeLongitude.qvd](qvd);
+Store LatitudeLongitude Into [lib://1.Transform/LatitudeLongitude.qvd](qvd);
+Drop Table LatitudeLongitude;
+
+Regional:
+LOAD
+    Upper(LOJA)					as UNIDADEERP,
+    Upper(UNIDADE)				as UNIDADE,
+    Upper(REGIAO)				as REGIAO,
+    Upper(REGIONAL)				as REGIONAL,
+    upper(REGIONALCOD)			as REGIONALCOD,
+    Upper(COD_PRECIFICACAO)		as COD_PRECIFICACAO,
+    Upper(SITUACAO)				as SITUACAO,
+    Upper(DIRETORIA)			as DIRETORIA,
+    Upper(DIRETOR)				as DIRETOR,
+    Upper(UNIDADE_ABREVIADA)	as UNIDADE_ABREVIADA,
+    Upper(REGIONAL_ABREVIADA) 	as REGIONAL_ABREVIADA,
+    Upper(REG_RECEBIMENTO)		as REG_RECEBIMENTO,
+    Upper(REGIAO_PPR)			as REGIAO_PPR,
+    Upper(RAZAO_SOCIAL)			as RAZAO_SOCIAL
+FROM [lib://0.Extract/Regional.qvd](qvd);
+Inner Join(Regional)
+LOAD
+    UNIDADEERP,
+    Latitude,
+    Longitude    
+FROM [lib://1.Transform/LatitudeLongitude.qvd](qvd);
+STORE Regional INTO [lib://1.Transform/Regional.qvd](qvd);
+Drop Table Regional;

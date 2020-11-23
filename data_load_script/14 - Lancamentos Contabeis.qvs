@@ -1,0 +1,35 @@
+///$tab 14 - Lancamentos Contabeis
+TabLancamentosContabeis:
+LOAD
+    CODI_EMP																			AS CodEmpresa,
+   Replace(ApplyMap('MapFilialCODEMP',text(CODI_EMP),null()),'PARAISO TO','PARAISO')	AS	Filial,
+   ApplyMap('MapRegionalCODEMP'	,text(CODI_EMP),null())									AS	Regional,	
+   ApplyMap('MapDiretoriaCODEMP'	,text(CODI_EMP),null())								AS	Diretoria,
+   ApplyMap('MapDim_ContasContabeis',Hash128(CODI_PLC,CODI_CPC)) 	AS "Descrição da Conta Contábil",
+   ApplyMap('MapDim_HistoricoContabil',HIST_HIS) 					AS "Histórico",
+    SEQU_CLC 														AS "Código Cabeçalho",
+       SEQU_LCT														AS "Nr Lançamento",
+    CODI_CPC														AS "Conta Contábil",
+    TIPO_LCT                                                        AS "D/C",
+    IF( TIPO_LCT = 'C' , VLOR_LCT * (-1), VLOR_LCT)			    	AS "Valor",
+    COMP_LCT														AS "Complemento do Histórico",
+    Date(Floor(DATA_CLC))											AS "Data",
+    year(Date(Floor(DATA_CLC)))										AS "Ano",
+    Month(Date(Floor(DATA_CLC)))									AS "Mes",
+    ORIG_CLC,
+    CODI_TRA,
+    SDOC_CLC,
+    USLA_CLC														AS "Cod Usuario Lancamento",
+    If(    TIPO_CLC = 'F' , 'Lançamento Normal',
+     If(   TIPO_CLC = 'S' , 'Eliminação Intercompany')) AS "Tipo Fiscal ou Societário"
+FROM [lib://0.Extract/Siagri/Mensal/LANCONTAB_*.qvd]
+(qvd);
+
+left Join(TabLancamentosContabeis)
+LOAD 
+    CODI_USU 														AS "Cod Usuario Lancamento",
+     ApplyMap('MapDim_UserLancContabil',CODI_PES) 					AS "Usuario Lancamento"
+    
+FROM [lib://0.Extract/Siagri/CADUSU.qvd]
+(qvd);
+CALL subGeraQVD ('TabLancamentosContabeis','Siagri',1);

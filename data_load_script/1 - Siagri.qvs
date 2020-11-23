@@ -1,0 +1,227 @@
+///$tab 1 - Siagri
+TabProdutoSimilar:
+LOAD
+    num(num#(CODI_PSV))	AS	CodProduto,
+    num(num#(CODI_VPR))	AS	CodProdutoSimilar
+FROM
+	[lib://0.Extract/Siagri/SIMIPROD.qvd]
+(qvd);
+CONCATENATE(TabProdutoSimilar)
+LOAD
+	CodProdutoSimilar	AS	CodProduto,
+	CodProduto			AS	CodProdutoSimilar
+RESIDENT
+	TabProdutoSimilar
+;
+
+CALL subGeraQVD ('TabProdutoSimilar','Siagri',1);
+
+
+
+TabCiclo:
+LOAD
+	*,
+    LEFT(ChaveCiclo,2) - 18 + 1				AS	ChaveCicloNumerico
+;
+LOAD
+    CODI_CIC								AS 	CodCiclo,
+    $(vTransformacaoChaveCiclo(DESC_CIC))	AS	ChaveCiclo,
+    DESC_CIC								AS	Ciclo,
+    date(floor(DINI_CIC))					AS	DataInicio,
+    date(floor(DFIN_CIC))					AS	DataFim,
+    SITU_CIC								AS	Situacao
+FROM
+	[lib://0.Extract/Siagri/CICLO.qvd](qvd)
+;
+INNER JOIN(TabCiclo)
+LOAD	DISTINCT
+	CodCiclo,
+    ROWNO()	AS	OrdemCiclo
+RESIDENT
+	TabCiclo
+ORDER BY
+	DataInicio
+;
+
+CALL subGeraQVD ('TabCiclo','Siagri',1);
+
+
+TabMarcaProdutoSiagri:
+LOAD	DISTINCT
+    NUM(NUM#(CODI_PSV))	AS	CodProdutoSiagri,
+    MARC_PRO			AS	Marca
+FROM
+	[lib://0.Extract/Siagri/produto.qvd]
+(qvd);
+
+CALL subGeraQVD ('TabMarcaProdutoSiagri','Siagri',1);
+
+MapSubGrupoSiagri:	MAPPING	LOAD	CODI_SBG,	DESC_SBG	AS	SubGrupoProduto	FROM	[lib://0.Extract/DW/SUBGRUPO.qvd](qvd);
+
+TabProduto:
+LOAD
+    num(num#(CODI_PSV))	AS	CodProduto,
+    ApplyMap('MapAgrupadorProduto',num(num#(CODI_PSV)),DESC_PSV)	AS	Produto,
+    ApplyMap('MapPrincipioAtivo',num(num#(CODI_PSV)),'SEM DEPARA')	AS	PrincipioAtivo,
+    ApplyMap('MapSubGrupoSiagri',CODI_SBG,null())					AS	SubGrupoProduto,
+    CODI_GPR			AS	CodGrupoProduto,
+    CODI_SBG			AS	CodSubGrupo,
+    UNID_PSV			AS  UnidadeMedida,
+    DESC_PSV			AS	ProdutoOriginal
+FROM
+	[lib://0.Extract/Siagri/PRODSERV.qvd]
+(qvd);
+
+CALL subGeraQVD ('TabProduto','Siagri',1);
+
+TabFornecedor:
+LOAD
+    CODI_TRA	AS	CodFornecedor,
+    RAZA_TRA	AS	Fornecedor
+FROM 
+	[lib://0.Extract/Siagri/TRANSAC.qvd]
+(qvd);
+left Join
+LOAD
+    CODI_EMP   AS CodEmpOrigemFornecedor,
+    COD2_TRA   AS	CodFornecedor
+    
+FROM [lib://0.Extract/Siagri/CADEMP.qvd]
+(qvd);
+LEFT JOIN
+LOAD	DISTINCT
+    CODI_TRA	AS	CodFornecedor,
+    NUM(NUM#(CODI_PSV))	AS	CodProdutoSiagri
+FROM
+	[lib://0.Extract/Siagri/produto.qvd]
+(qvd);
+
+
+CALL subGeraQVD ('TabFornecedor','Siagri',1);
+
+
+
+
+
+
+TB_PEDIDOS_LIMITE_EXCEDIDO_SIAGRI:
+LOAD
+    CODI_LIB,
+    date(Floor(DATA_LIB)) as DATA_LIB,
+    TIPO_LIB
+FROM [lib://0.Extract/Siagri/LIBERASENHA.qvd]
+(qvd)
+WHERE TIPO_LIB = '05'
+;
+LEFT Join
+LOAD
+    trim (TextBetween(DOCU_SEN,':','/')) as PEDI_PED,
+    trim (TextBetween(DOCU_SEN,'/','')) as SERI_PED,
+    CODI_EMP,
+    date(Floor(DATA_SEN)) as DATA_SEN,
+    CODI_SEN AS CODI_LIB
+FROM [lib://0.Extract/Siagri/PEDSENHA.qvd]
+(qvd);
+
+CALL subGeraQVD ('TB_PEDIDOS_LIMITE_EXCEDIDO_SIAGRI','Siagri',1);
+
+FatItemPedido:
+LOAD
+	HASH128(CODI_EMP,PEDI_PED,SERI_PED,DEMI_PED)		AS	%LinkCabecalhoPedidos,
+    Hash128(CODI_EMP,PEDI_PED)	AS	%LinkPedidos,
+    DATE(FLOOR(DEMI_PED))		AS	DataEmissaoPedido,
+    DATE(FLOOR(DEMI_PED))		AS	DataReferencia,
+    TEXT(CODI_EMP)				AS	CodEmpresa,
+    PEDI_PED					AS	NumeroPedido,
+    SERI_PED					AS	SeriePedido,
+    CODI_PSV					AS	CodProduto,
+    VLOR_IPE					AS	ValorUnitarioBruto,
+    VLIQ_IPE					AS	ValorUnitarioLiquido,
+    QTDE_IPE * VLIQ_IPE 		AS	ValorTotalPedido,
+    VLIQ_IPE * QTDE_IPE - VLIQ_IPE * QPER_IPE	AS SaldoPedido,
+    QTDE_IPE					AS	QtdPedido,
+    QPER_IPE					AS	QtdPerdida
+FROM 
+	[lib://0.Extract/Siagri/IPEDIDO.qvd]
+(qvd);
+
+CALL subGeraQVD ('FatItemPedido','Siagri',1);
+
+
+TabCabecalhoPedido:
+LOAD
+	ApplyMap('MapTipoPedido',SERI_PED,'Não Identificado')		AS	TipoPedido,
+	ApplyMap('MapStatusPedido',ESTA_PED,'Não Identificado')		AS	StatusPedido,
+    ApplyMap('MapSituacaoPedido',SITU_PED,'Não Identificado')	AS	SituacaoPedido,
+	HASH128(CODI_EMP,PEDI_PED,SERI_PED,DEMI_PED)				AS	%LinkCabecalhoPedidos,
+    ApplyMap('MapFlagPedidosLiberados',HASH128(text(CODI_EMP),text(PEDI_PED),text(SERI_PED)),DUAL('NÃO',0))	AS	FlagPedidoLiberado,
+    DATE(FLOOR(DEMI_PED))				AS	DataEmissaoPedido,
+    SITU_PED							AS	CodSituacaoPedido,
+    TEXT(CODI_EMP)						AS	CodEmpresa,
+    TEXT(PEDI_PED)						AS	NumeroPedido,
+    TEXT(SERI_PED)						AS	SeriePedido,
+    IF(SITU_PED = 9,1,0)				AS	FlagPedidoCancelado,
+ 	CCFO_CFO							AS	CFOP,
+    TOTA_PED							AS  ValorPedidoCabecalho
+FROM 
+	[lib://0.Extract/Siagri/PEDIDO.qvd]
+(qvd);
+left Join
+LOAD    
+   
+    TEXT(PEDI_PED)							AS	NumeroPedido,
+    TEXT(SERI_PED)							AS	SeriePedido,
+    TEXT(CODI_EMP)							AS	CodEmpresa,
+    DATA_LIB								AS  DataLiberacaoPedido
+FROM [lib://1.Transform/Siagri/TB_PEDIDOS_LIMITE_EXCEDIDO_SIAGRI.qvd]
+(qvd)
+where DATA_LIB >='01/01/2018';
+
+CALL subGeraQVD ('TabCabecalhoPedido','Siagri',1);
+
+
+
+
+// TabCabecalhoPedido:
+// LOAD
+// 	ApplyMap('MapTipoPedido',SERI_PED,'Não Identificado')		AS	TipoPedido,
+// 	ApplyMap('MapStatusPedido',ESTA_PED,'Não Identificado')		AS	StatusPedido,
+//     ApplyMap('MapSituacaoPedido',SITU_PED,'Não Identificado')	AS	SituacaoPedido,
+// 	HASH128(CODI_EMP,PEDI_PED,SERI_PED,DEMI_PED)				AS	%LinkCabecalhoPedidos,
+//     ApplyMap('MapFlagPedidosLiberados',HASH128(text(CODI_EMP),text(PEDI_PED),text(SERI_PED)),DUAL('NÃO',0))	AS	FlagPedidoLiberado,
+//     DATE(FLOOR(DEMI_PED))				AS	DataEmissaoPedido,
+//     SITU_PED							AS	CodSituacaoPedido,
+//     TEXT(CODI_EMP)						AS	CodEmpresa,
+//     PEDI_PED							AS	NumeroPedido,
+//     SERI_PED							AS	SeriePedido,
+//     IF(SITU_PED = 9,1,0)				AS	FlagPedidoCancelado,
+//  	CCFO_CFO							AS	CFOP
+// FROM 
+// 	[lib://0.Extract/Siagri/PEDIDO.qvd]
+// (qvd);
+
+// CALL subGeraQVD ('TabCabecalhoPedido','Siagri',1);
+
+TabVinculo:
+LOAD
+    CODI_TRA	AS	CodParceiro,
+    RAZA_TRA	AS	Parceiro
+FROM 
+	[lib://0.Extract/Siagri/TRANSAC.qvd]
+(qvd);
+INNER JOIN(TabVinculo)
+LOAD
+    CODI_TRA	AS	CodParceiro,
+    CODI_VIN	AS	CodVinculo
+FROM 
+	[lib://0.Extract/Siagri/VINCULO.qvd]
+(qvd);
+INNER JOIN(TabVinculo)
+LOAD
+    CODI_TRA	AS	CodVinculo,
+    RAZA_TRA	AS	Vinculo
+FROM 
+	[lib://0.Extract/Siagri/TRANSAC.qvd]
+(qvd);
+
+CALL subGeraQVD ('TabVinculo','Siagri',1);

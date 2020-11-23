@@ -1,0 +1,35 @@
+///$tab 20 - Conexão com SchemaQlik
+HistoricoTabelaPreco:
+Load
+	*,
+    CodTabela&' - '&NomeTabela 		as TabelaFiltro,
+    CodProduto&' - '&NomeProduto 	as ProdutoFiltro,
+    CodGrupo&' - '&NomeGrupo		as GrupoProduto,
+    CodSubGrupo&' - '&NomeSubGrupo	as SubGrupoFiltro
+;
+LOAD
+	if(NIVELALTERACAO = 'T', 'Tabela', 'Produto') 	as NivelAlteracao,
+    if(VIGENTE = '1', 'Vigente', 'Historico') 		as Vigente,
+	Date(Floor(DATAATUALIZACAO)) 					as DataAtualizacao,
+    Date(Floor(DATAINSERCAO)) 						as DataInsercao,
+    Date(Floor(DATATABELA)) 				 		as DataTabela,
+	TABELAPRECOERP 			 						as CodTabela,
+    TABLEPRECONOME 			 						as NomeTabela,
+    GRUPOPRODUTOERP 		 						as CodGrupo,
+    GRUPOPRODUTONOME 		 						as NomeGrupo,
+    SUBGRUPOPRODUTOERP 		 						as CodSubGrupo,
+    SUBGRUPONOME 			 						as NomeSubGrupo,
+    PRODUTOERP 				 						as CodProduto,
+    PRODUTONOME 			 						as NomeProduto,
+    MARCAPRODUTO 			 						as MarcaProduto,    
+    SITUACAOTABELAERP 		 						as SituacaoTabela,
+    UNIDADEPRODUTOERP 		 						as UnidadeProduto,
+    PRECOTABELA 			 						as PrecoTabela,
+    CUSTOTABELA 			 						as CustoTabela,
+    QUANTIDADEPRODUTO 		 						as QtdProduto,    
+    SITUACAOMATERIAL 		 						as ProdutoAtivo,
+    SITUACAOREGISTRO 		 						as EstadoCadastro    
+FROM [lib://0.Extract/Migracao/HistoricoTabelaPreco.qvd](qvd);
+
+STORE HistoricoTabelaPreco INTO [lib://1.Transform/Migracao/HistoricoTabelaPreco.qvd](qvd);
+Drop Table HistoricoTabelaPreco;

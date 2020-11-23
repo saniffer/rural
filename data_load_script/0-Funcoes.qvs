@@ -1,0 +1,77 @@
+///$tab 0-Funcoes
+LET vHoje	=	DATE(TODAY(),'YYYYMMDD');
+SET vTransformacaoDeTexto = UPPER(TRIM(MapSubString('RemoveAcento_Map',$1)));
+
+SET vTransformacaoChaveCiclo=;
+SET	vTransformacaoCiclo=;
+LET vCaracterAspasSimples=chr(39);
+
+
+FOR vAno =2014 TO YEAR(TODAY())+2
+
+	LET vAnoAnterior = vAno-1;
+	LET vRightAno = RIGHT(vAno,2);
+	LET vRightAnoAnterior = RIGHT(vAnoAnterior,2);
+	
+    vTransformacaoChaveCiclo=vTransformacaoChaveCiclo&'IF(Match($1,$(vCaracterAspasSimples)SAFRA $(vAnoAnterior)/$(vAno)$(vCaracterAspasSimples),$(vCaracterAspasSimples)SAFRINHA $(vAno)$(vCaracterAspasSimples)),$(vCaracterAspasSimples)$(vRightAnoAnterior)-$(vRightAno)$(vCaracterAspasSimples),';
+    vTransformacaoCiclo=vTransformacaoCiclo&'IF(WildMatch($1,$(vCaracterAspasSimples)*$(vRightAnoAnterior)/$(vRightAno)*$(vCaracterAspasSimples)),$(vCaracterAspasSimples)SAFRA $(vAnoAnterior)/$(vAno)$(vCaracterAspasSimples),IF(WildMatch($1,$(vCaracterAspasSimples)*$(vAno)*$(vCaracterAspasSimples)),$(vCaracterAspasSimples)SAFRINHA $(vAno)$(vCaracterAspasSimples),';
+    
+	
+    IF	vAno = YEAR(TODAY())+2	THEN
+    
+    	LET vTransformacaoChaveCiclo 	= vTransformacaoChaveCiclo&'NULL()'&REPEAT(')',year(today()) - 2014 +3);
+		LET	vTransformacaoCiclo			=	vTransformacaoCiclo&'NULL()'&REPEAT(')',(year(today()) - 2013+2 ) *2);
+        
+	ENDIF;
+    
+NEXT;
+
+
+
+SUB subIntervalDescontoBayer(sub.intervalcampanha.nometabela,sub.intervalcampanha.prefixo,sub.intervalcampanha.range)
+	
+    LET v.sub.interval.campodesconto = 'PercDesconto$(sub.intervalcampanha.prefixo)CampanhaBayer';
+    
+	LET v.sub.interval.campo = 'PercDescontoCampanhaBayer	AS $(v.sub.interval.campodesconto)';
+  	LET v.sub.interval.campo.ValorProximoDesconto_campo = 'ValorProximoDesconto$(sub.intervalcampanha.prefixo)';
+
+    LET v.sub.interval.campo.ValorProximoMarco = 'Maximo as ValorProximoMarco$(sub.intervalcampanha.prefixo)';
+	LET v.sub.interval.campo.ValorProximoDesconto = 'ValorProximoDesconto as $(v.sub.interval.campo.ValorProximoDesconto_campo)';
+
+	tempTabDescontoBayerCampanha2020_sub:
+	NoConcatenate
+	LOAD
+		DiretoriaCampanhaBayer2020,
+	    Minimo,
+		Maximo,
+	    $(v.sub.interval.campo),
+        $(v.sub.interval.campo.ValorProximoDesconto),
+	    1 //Campo para não concatenar (Left join feito lá em baixo)
+	RESIDENT
+		$(sub.intervalcampanha.nometabela)
+	;
+	
+	INNER JOIN(tempTabDescontoBayerCampanha2020_sub)
+	INTERVALMATCH($(sub.intervalcampanha.range),DiretoriaCampanhaBayer2020)
+	LOAD
+		Minimo,
+	    Maximo,
+	    DiretoriaCampanhaBayer2020
+	RESIDENT
+		$(sub.intervalcampanha.nometabela)
+	;
+	
+	LEFT JOIN(tempTabGatilhoCampanha2020)
+	LOAD	DISTINCT
+		$(sub.intervalcampanha.range),
+		DiretoriaCampanhaBayer2020,
+		$(v.sub.interval.campodesconto),
+        $(v.sub.interval.campo.ValorProximoMarco),
+        $(v.sub.interval.campo.ValorProximoDesconto_campo)
+	RESIDENT
+		tempTabDescontoBayerCampanha2020_sub
+	;
+	
+	DROP TABLES	tempTabDescontoBayerCampanha2020_sub;
+	
+END SUB;

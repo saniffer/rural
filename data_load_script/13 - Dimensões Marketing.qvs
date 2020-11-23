@@ -1,0 +1,699 @@
+///$tab 13 - Dimensões Marketing
+/*
+ESTA ABA UTILIZA INFORMAÇÕES DA ABA 10-PEDIDOCRM_SIAGRI_MARGEM E DA ABA 2-CRM
+CRIANDO QVD'S UTILIZANDO AS DUAS FONTES DE INFORMAÇÕES
+
+*/
+
+/********************
+INICIO TRANSFORMAÇÃO TABELA VINCULOS CLIENTES
+/*********************/
+
+
+//Classificacao Cliente
+
+TabClassificacaoRating:
+LOAD
+	%LinkClienteChaveCiclo,
+    
+	IF(ValorPedidoMovimento < 100000,dual('< 100.000',1),
+    IF(ValorPedidoMovimento < 250000,dual('100.000 a 250.000',2),
+	dual('>250.000',3)
+    ))	AS	ClassificacaoRating
+;
+LOAD
+	%LinkClienteChaveCiclo,
+    sum(ValorPedidoMovimento)	as	ValorPedidoMovimento
+FROM 
+	[lib://1.Transform/CloverCRM/PedidosCRM_SIAGRI_MARGEM.qvd](qvd)
+GROUP BY
+	%LinkClienteChaveCiclo
+;
+
+
+CALL subGeraQVD ('TabClassificacaoRating','CloverCRM',1);
+
+TabVinculos_Marketing:
+LOAD	DISTINCT
+	*
+WHERE
+	parceiroCRM <> Vinculo
+;
+LOAD	DISTINCT
+	ClienteId,
+	ClientePrincipal						AS	parceiroCRM,
+	$(vTransformacaoDeTexto(Cliente))		AS	Vinculo
+FROM 
+	[lib://1.Transform/CloverCRM/PedidosCRM_SIAGRI_MARGEM.qvd](qvd)
+;
+
+CALL subGeraQVD ('TabVinculos_Marketing','CloverCRM',1);
+
+LET vTempoExecucao2 = NOW();
+
+TabCliente_Marketing:
+LOAD	DISTINCT
+	ClienteId,
+	ClientePrincipal						AS	parceiroCRM
+FROM 
+	[lib://1.Transform/CloverCRM/PedidosCRM_SIAGRI_MARGEM.qvd](qvd)
+;
+
+CALL subGeraQVD ('TabCliente_Marketing','CloverCRM',1);
+
+/********************
+FIM TRANSFORMAÇÃO TABELA VINCULOS CLIENTES
+/*********************/
+
+
+LET vTempoExecucao3 = NOW();
+
+TabTipoPotencial:
+LOAD
+*
+INLINE 
+[
+TipoPotencialCodigo,Mercado
+1,REAL
+2,TOTAL
+
+*,REAL
+*,TOTAL
+];
+
+CALL subGeraQVD ('TabTipoPotencial','CloverCRM',1);
+
+//Map feito para converter os 0 em 1 para não zerar o calculo.
+Map0Em1:	MAPPING	LOAD	0,1 	AutoGenerate 1;
+
+FatCustoArea:
+LOAD
+	*,
+   
+    ValorCustoPorArea * (PercVendaDiretaMultiplicador * PercSementeSalvaMultiplicador * PercAdocaoEspecialidadesMultiplicador)	AS	ValorCustoAreaReduçãoTotal,
+    ValorCustoPorArea * PercVendaDireta   			AS	ValorCustoAreaReduçãoVendaDireta,
+    ValorCustoPorArea * PercSementeSalva  			AS	ValorCustoAreaReduçãoSementeSalva,
+    ValorCustoPorArea * PercAdocaoEspecialidades	AS	ValorCustoAreaReduçãoEspecialidades,
+    $(vTransformacaoChaveCiclo(Ciclo))				AS	ChaveCiclo
+;
+LOAD
+	$(vTransformacaoDeTexto(Ciclo))		AS	Ciclo,
+	GRUPO								AS	GrupoProduto,
+    $(vTransformacaoDeTexto(Unidade))	AS	UnidadeArea,
+    $(vTransformacaoDeTexto(Cultura))	as	CulturaArea,
+	HASH128($(vTransformacaoDeTexto(Unidade)),$(vTransformacaoDeTexto(Cultura)))	AS	[%LinkAreaSegmentacao],
+    
+    //Campos originais sem transformar 0 em 1.
+    "%Venda Direta"			AS	PercVendaDireta,
+	"Semente Salva" 		AS	PercSementeSalva,
+	"Adoção Especialidades"	AS	PercAdocaoEspecialidades,
+    
+    //Transformando 0 em 1 para não zerar o potencial durante a transformação
+    ApplyMap('Map0Em1',"Custo há","Custo há")									AS	ValorCustoPorArea,
+    ApplyMap('Map0Em1',"%Venda Direta","%Venda Direta")							AS	PercVendaDiretaMultiplicador,
+    ApplyMap('Map0Em1',"Semente Salva","Semente Salva")							AS	PercSementeSalvaMultiplicador,
+    ApplyMap('Map0Em1',"Adoção Especialidades","Adoção Especialidades")			AS	PercAdocaoEspecialidadesMultiplicador
+    
+FROM
+	[lib://2.Arquivos/Marketing/Segmentação adoção.xlsx]
+(ooxml, embedded labels, header is 19 lines, table is [IND. TEC. WEDERSON]);
+
+DROP FIELDS 
+	PercVendaDiretaMultiplicador,
+	PercSementeSalvaMultiplicador,
+	PercAdocaoEspecialidadesMultiplicador;
+
+CALL subGeraQVD ('FatCustoArea','CloverCRM',1);
+
+LET vTempoExecucao4 = NOW();
+
+
+
+MapClientePossuiVenda:
+MAPPING
+LOAD
+	hash128($(vTransformacaoDeTexto(Filial)),Ciclo,ClientePrincipal),
+    1
+FROM 
+	[lib://1.Transform/CloverCRM/PedidosCRM_SIAGRI_MARGEM.qvd](qvd)
+WHERE
+	YEAR(DataEmissao)>='2018'
+;
+
+TabDiretoria:
+LOAD	
+	*,
+	CodUnidade as REDUCTION
+;
+LOAD	distinct
+	Num(Num#(CodEmpresa)) as CodUnidade,
+   	MapSubString('RemoveAcento_Map',Regional)	as	Regional,
+	trim(TextBetween(Diretoria,'Diretoria',''))	as	Diretoria
+FROM 
+	[lib://1.Transform/CloverCRM/PedidosCRM_SIAGRI_MARGEM.qvd]
+(qvd);
+
+
+CALL subGeraQVD ('TabDiretoria','CloverCRM',1);
+
+/*
+
+TRANSFORMAÇÕES POTENCIAL TECNOLÓGICO
+
+*/
+LET vTempoExecucao5 = NOW();
+
+//Crosstable pegando a area por cultura.
+tempTabPotencialTecnologico:
+CrossTable('Cultura','ValorAreaSegmentacao',3)
+LOAD
+    $(vTransformacaoDeTexto(REGIONAL))			AS	Regional,
+    $(vTransformacaoDeTexto(DESCRICAO_LOJA))	AS	Filial,
+    $(vTransformacaoDeTexto(CLIENTE))			AS	parceiroCRM,
+    AREA_SOJA,
+    AREA_MILHO,
+    AREA_PASTAGEM,
+    AREA_HF,
+    AREA_ARROZ,
+    AREA_FEIJÃO,
+    AREA_SORGO,
+    AREA_ALGODAO,
+    [AREA_CANA-DE-ACUCAR],
+    AREA_GIRASSOL,
+    AREA_EUCALIPTO
+FROM 
+	[lib://2.Arquivos/Marketing/Segmentação adoção.xlsx]
+(ooxml, embedded labels, table is BASE);
+
+//Pegando o valor da cultura e criadno link com a área
+TabAreaSegmentacao:
+LOAD
+   	HASH128(Filial,Cultura)	AS	%LinkAreaSegmentacao,
+    hash128(Filial,Cultura,parceiroCRM)	AS	%LinkArea,
+    parceiroCRM,
+    ValorAreaSegmentacao,
+    Regional,
+    Filial,
+    Cultura
+;
+LOAD
+	Regional
+	,Filial
+	,parceiroCRM
+	,TextBetween($(vTransformacaoDeTexto(Cultura)),'_','')	AS	Cultura
+	,ALT(ValorAreaSegmentacao,0)	AS	ValorAreaSegmentacao//Este campo ira duplicar depois do left join para realizar a segmentação do potencial por grupo de produto
+RESIDENT
+	tempTabPotencialTecnologico
+;
+
+DROP TABLE tempTabPotencialTecnologico;
+
+CALL subGeraQVD ('TabAreaSegmentacao','CloverCRM',0);
+
+//LEFT JOIN realizado para segmentar a área da tabela de potencial por grupo de produto.
+LEFT JOIN(TabAreaSegmentacao)	LOAD	*	FROM	[LIB://1.Transform/CloverCRM/FatCustoArea.qvd](QVD);
+
+
+LET vTempoExecucao6 = NOW();
+
+
+tempTabPotencialTecnológico:
+LOAD
+	*,
+    IF(FlagClientePossuiVenda=1,ValorPotencialTecnológico,0)			AS	ValorPotencialTecnológicoRuralBrasil,
+   	IF(FlagClientePossuiVenda=0,ValorPotencialTecnológico,0)			AS	ValorPotencialTecnológicoProspect
+WHERE
+	[ValorPotencialTecnológico] >1
+;
+LOAD
+	*,    
+	'*'	AS	TipoPotencialCodigo,
+    HASH128(parceiroCRM) 												AS	%LinkSegmentacaoParceiro,
+	HASH128(PurgeChar(parceiroCRM,' ')) 								AS	%LinkPerfilCompraParceiro,
+
+
+	ValorAreaSegmentacao	*	ValorCustoPorArea						AS	ValorPotencialTecnológico,
+    ValorAreaSegmentacao	*	ValorCustoPorArea						AS	ValorPotencialTecnológicoIdentificado,
+    
+    ValorAreaSegmentacao	*	IF(ValorCustoAreaReduçãoVendaDireta		>0	,ValorCustoPorArea,0)		AS	ValorPotencialTecnológicoVendaDireta,
+    ValorAreaSegmentacao	*	IF(ValorCustoAreaReduçãoSementeSalva	>0	,ValorCustoPorArea,0)		AS	ValorPotencialTecnológicoSementeSalva,
+    ValorAreaSegmentacao	*	IF(ValorCustoAreaReduçãoEspecialidades	>0	,ValorCustoPorArea,0)		AS	ValorPotencialTecnológicoEspecialidades,    
+    
+    ApplyMap('MapClientePossuiVenda',hash128((Filial),Ciclo,parceiroCRM),0)	AS	FlagClientePossuiVenda
+RESIDENT
+	TabAreaSegmentacao
+;
+
+DROP TABLE TabAreaSegmentacao;
+
+MapTicketMédioPorRegional:
+MAPPING
+LOAD
+	hash128(Regional),
+    SUM(ValorPotencialTecnológico) / COUNT(DISTINCT parceiroCRM)
+RESIDENT
+	tempTabPotencialTecnológico
+GROUP BY
+	Regional,TipoPotencialCodigo
+;
+
+
+MapParceiroCodParceiro:	MAPPING	LOAD	ParceiroPrincipal,	CodParceiro	FROM 	[lib://1.Transform/CloverCRM/TabParceiro.qvd]	(qvd);
+MapFilialCodFilial:		MAPPING	LOAD    upper(Filial),		IdFilial	FROM	[lib://1.Transform/CloverCRM/EmpresaCRM.qvd]	(qvd);
+MapGrupoProdutoMarketingIdProduto:
+MAPPING
+LOAD
+    GrupoPersonalizadoMarketing,
+	FirstValue(IdProduto)
+FROM 
+	[lib://1.Transform/CloverCRM/TabProduto.qvd](qvd)
+GROUP BY
+	GrupoPersonalizadoMarketing
+;
+
+
+MapCicloIdSafra:
+MAPPING
+LOAD
+    Ciclo,
+	FirstValue(IdSafra)
+FROM 
+	[lib://1.Transform/CloverCRM/TabSafra.qvd](qvd)
+GROUP BY
+	Ciclo
+;
+
+
+TabPotencialTecnologico:
+LOAD
+	RowNo()										AS	%LinkPotencialTecnologico,
+	(ValorTicketMedioPotencialTecnologico/3) 	AS 	RegraBaixoPotencial,
+	(ValorTicketMedioPotencialTecnologico/3)*2	AS 	RegraAltoPotencial,
+   	autonumberhash128(parceiroCRM,Filial)		AS	%LinkConsultorProspect,
+    
+    *;
+LOAD	
+	*,
+    IF(Cultura = 'SOJA' 	AND GrupoProduto='SEMENTES','SEMENTE DE SOJA',
+    IF(Cultura = 'MILHO' 	AND GrupoProduto='SEMENTES','SEMENTE DE MILHO',
+    IF(Match(GrupoProduto,'FOLIARES','MICROBIOLOGICO'),'ESPECIALIDADES',
+    GrupoProduto)))				AS	GrupoProdutoSiagri,
+
+    
+    hash128(parceiroCRM,ChaveCiclo)										AS	%LinkRating,
+    ApplyMap('MapFilialCodFilial',Filial,null())						AS	IdFilial,
+	ApplyMap('MapCicloIdSafra',Ciclo,null())							AS	IdSafra,
+    ApplyMap('MapParceiroCodParceiro',parceiroCRM,null())				AS	CodParceiro,
+	ApplyMap('MapGrupoProdutoMarketingIdProduto',GrupoProduto,null())	AS	CodProduto,
+    
+    num(num#(ApplyMap('MapFilialEmCodFilial',Filial,null())))	AS	CodUnidade,
+   	ApplyMap('MapTicketMédioPorRegional',hash128(Regional),1)	AS	ValorTicketMedioPotencialTecnologico
+RESIDENT
+	tempTabPotencialTecnológico
+;
+
+DROP TABLE tempTabPotencialTecnológico;
+
+CALL subGeraQVD ('TabPotencialTecnologico','CloverCRM',1);
+
+LET vTempoExecucao7 = NOW();
+
+
+/*
+
+	TRANSFORMAÇÃO IBGE
+
+*/
+
+tempTabAreaIBGE:
+CROSSTABLE('Cultura','ValorAreaIBGE',4)
+LOAD	DISTINCT
+    $(vTransformacaoDeTexto(Estado))		AS	EstadoIBGE,
+    $(vTransformacaoDeTexto(Regional))		AS	Regional,
+    $(vTransformacaoDeTexto(Unidade))		AS	Filial,
+   	$(vTransformacaoDeTexto(Municipios))	AS	Municipios,
+//    VPM,
+    SOJA,
+    MILHO,
+    FEIJÃO,
+    ALGODÃO
+FROM 
+	[lib://2.Arquivos/Marketing/Segmentação adoção.xlsx](ooxml, embedded labels, header is 6 lines, table is IBGE)
+WHERE
+	LEN(Regional) >=3;
+
+
+TabAreaIBGE:
+NOCONCATENATE
+LOAD
+	*,
+   	HASH128(Filial,Cultura)				AS	%LinkAreaSegmentacao,
+    hash128(Filial,Cultura,Municipios)	AS	%LinkAreaIBGE
+;
+LOAD	DISTINCT
+	EstadoIBGE,
+    Regional,
+    Filial,
+    Municipios,
+//    VPM,
+    SUM(ALT(ValorAreaIBGE,0))			AS	ValorAreaIBGE,
+    $(vTransformacaoDeTexto(Cultura))	AS	Cultura
+RESIDENT
+	tempTabAreaIBGE
+GROUP BY
+	EstadoIBGE,
+    Regional,
+    Filial,
+	Cultura,
+    Municipios
+;
+
+DROP TABLE tempTabAreaIBGE;
+
+CALL subGeraQVD ('TabAreaIBGE','CloverCRM',0);
+
+LEFT JOIN(TabAreaIBGE)	LOAD	*	FROM	[LIB://1.Transform/CloverCRM/FatCustoArea.qvd](QVD);
+
+LET vTempoExecucao8 = NOW();
+
+TabPotencialIBGE:
+LOAD
+	//TipoPOtencialAdicionado no link.	
+	HASH128(Regional,Capitalize(Filial),Cultura,GrupoProduto,1)	AS	%LinkIBGE,
+    ValorAreaIBGE * ValorCustoAreaReduçãoTotal		AS	ValorPotencialTecnológicoIBGE,
+   	1	AS	TipoPotencialCodigo,//Potencial Real	
+	*
+RESIDENT
+	TabAreaIBGE
+;
+CONCATENATE(TabPotencialIBGE)
+LOAD
+	//TipoPOtencialAdicionado no link.	
+	HASH128(Regional,Capitalize(Filial),Cultura,GrupoProduto,2)	AS	%LinkIBGE,
+    ValorAreaIBGE * ValorCustoPorArea	AS	ValorPotencialTecnológicoIBGE,
+   	2	AS	TipoPotencialCodigo,//Potencial total	
+	*
+RESIDENT
+	TabAreaIBGE
+;
+
+DROP TABLE TabAreaIBGE;
+
+CALL subGeraQVD ('TabPotencialIBGE','CloverCRM',1);
+
+
+
+LET vTempoExecucao9 = NOW();
+
+
+TempSegmentacaoCliente:
+LOAD
+	parceiroCRM,
+    SUM(ValorPedido)	AS	ValorPedido
+GROUP BY
+	parceiroCRM
+;
+LOAD
+//	ChaveCiclo,
+	ClientePrincipal			AS	parceiroCRM,
+    //Apenas vendas realizadas nesse ciclo contam para a classificação.
+    IF(ChaveCiclo='19-20',ValorPedidoMovimento,0)	AS	ValorPedido
+FROM 
+	[lib://1.Transform/CloverCRM/PedidosCRM_SIAGRI_MARGEM.qvd](qvd)
+WHERE
+	//Data escolhida para a trava dos ciclos.
+	 YEAR(DataEmissao) >=2018
+
+;
+OUTER JOIN(TempSegmentacaoCliente)
+LOAD
+	parceiroCRM,
+    SUM(ValorPotencialTecnológico)	AS	ValorPotencial
+FROM 
+	[lib://1.Transform/CloverCRM/TabPotencialTecnologico.qvd](qvd)
+WHERE
+	NOT ISNULL(ValorPotencialTecnológico)	AND     ChaveCiclo='19-20'
+GROUP BY
+	parceiroCRM
+;
+OUTER JOIN(TempSegmentacaoCliente)
+LOAD
+	parceiroCRM,
+	SUM(ValorAreaSegmentacao) AS ValorAreaSegmentacao
+FROM 
+	[lib://1.Transform/CloverCRM/TabAreaSegmentacao.qvd](qvd)
+GROUP BY
+	parceiroCRM
+;
+//Os atendimentos devem ser classificados, apesar de não possuirem venda ou potencial.
+CONCATENATE(TempSegmentacaoCliente)
+LOAD DISTINCT
+	ClientePrincipal	as parceiroCRM,
+    0	AS	ValorPotencial,
+    0	AS	ValorPedido
+FROM    
+	[lib://1.Transform/CloverCRM/TabAtendimento.qvd](qvd)
+WHERE
+	YEAR(DataAtendimento) >2018
+;
+CONCATENATE(TempSegmentacaoCliente)
+LOAD DISTINCT
+	ClientePrincipal	AS	parceiroCRM,
+    0	AS	ValorPotencial,
+    0	AS	ValorPedido
+FROM 
+	[lib://1.Transform/CloverCRM/AtendimentoPlanejado.qvd]
+(qvd);	
+
+TabSegmentacaoCliente:
+LOAD
+	%LinkSegmentacaoParceiro,
+   	IF(ValorPedido=0,1)		AS	FlagClienteProspect,
+   	IF(ValorPedido<>0,1)	AS	FlagClienteRuralBrasil,
+
+   	IF(ValorPedido=0,				DUAL('PROSPECT',0),
+    IF(ValorPotencial=0,			DUAL('SEM POT.',1),
+    IF(ValorAreaSegmentacao<201,	DUAL('COBERTURA',2),
+    IF(%ShareWallet<0.25,			DUAL('DESAFIOS',3),
+    IF(%ShareWallet<0.75,			DUAL('FOCO',4),
+   	DUAL('VIP',5)
+    )))))	AS	SegmentacaoShareCliente
+;
+LOAD
+	*,
+  	ALT(ValorPedido,0)/ValorPotencial	AS	%ShareWallet
+;
+LOAD
+	HASH128(parceiroCRM)			AS	%LinkSegmentacaoParceiro,
+    sum(ALT(ValorAreaSegmentacao,0))		AS	ValorAreaSegmentacao,
+    sum(ALT(ValorPotencial,0))				AS	ValorPotencial,
+    sum(ALT(ValorPedido,0))					AS	ValorPedido
+RESIDENT
+	TempSegmentacaoCliente
+GROUP BY
+	parceiroCRM
+;
+
+DROP TABLE TempSegmentacaoCliente;
+
+CALL subGeraQVD ('TabSegmentacaoCliente','CloverCRM',1);
+
+LET vTempoExecucao10 = NOW();
+
+
+
+///TRANSFORMAÇÃO CONSULTOR PROSPECT, DEFININDO UMA CARTEIRA PARA CADA CONSULTOR COM BASE NAS REGRAS ABAIXO
+
+
+tempTabConsultor:
+LOAD
+    $(vTransformacaoDeTexto(RAZA_TRA))	AS	parceiroCRM,
+    NOME_PES		AS	Consultor,
+    TEXT(CODI_EMP) 	AS 	CODI_EMP
+FROM [lib://0.Extract/Siagri/TAB_CONSULTOR_CLIENTE.qvd]
+(qvd);
+LEFT JOIN(tempTabConsultor)
+LOAD
+    TEXT(CODI_EMP) 											AS	CODI_EMP,
+    trim(PurgeChar($(vTransformacaoDeTexto(Filial)),'-'))	AS	FilialCRM,
+    $(vTransformacaoDeTexto(Regional))				AS 	RegionalCRM
+FROM
+	[lib://1.Transform/CloverCRM/EmpresaCRM.qvd]
+(qvd);
+
+MapConsultorSiagri:
+MAPPING
+LOAD
+	HASH128(parceiroCRM,FilialCRM),
+    Consultor
+RESIDENT
+	tempTabConsultor
+ ;
+
+
+
+//Map criado para verificar quais clientes possuiam mais de um cliente na mesma filial
+MapClientesMaisDeUmConsultorNaMesmaFilial:
+MAPPING
+LOAD
+	%LinkClienteMaisDeumConsultor,
+    1
+WHERE
+	QtdConsultores > 1
+;
+LOAD	DISTINCT
+	HASH128(parceiroCRM,FilialCRM)	AS	%LinkClienteMaisDeumConsultor,
+    COUNT(DISTINCT Consultor)		AS	QtdConsultores
+RESIDENT
+	tempTabConsultor
+GROUP BY
+	parceiroCRM,FilialCRM
+;
+DROP TABLE tempTabConsultor;
+
+MapConsultor:
+MAPPING
+LOAD
+	ClientePrincipal&Filial,
+    FirstSortedValue(distinct Vendedor,-DataEmissao)
+FROM 
+	[lib://1.Transform/CloverCRM/PedidosCRM_SIAGRI_MARGEM.qvd](qvd)
+GROUP BY
+	ClientePrincipal,Filial
+;
+
+MapNomeConsultorCodERP:
+MAPPING
+LOAD
+    Consultor,
+    CodConsultor
+FROM [lib://1.Transform/CloverCRM/TabConsultor.qvd]
+(qvd);
+
+
+
+TabConsultorProspect:
+LOAD
+	*,
+    ApplyMap('MapNomeConsultorCodERP',Consultor,null())	as	CodConsultor
+    
+;
+LOAD
+	%LinkConsultorProspect,
+    IF(ConsultorTemp ='VENDEDOR LOJA','Prospect - '&Filial,ConsultorTemp)	AS	Consultor
+;
+LOAD
+	%LinkConsultorProspect,
+    Filial,
+    IF((FlagClientePossuiVenda = 0 )	AND FlagClientesMaisDeUmConsultorMesmaFilial=1,ConsultorCarteiraSiagri,
+    IF(FlagClientePossuiVenda 	= 1 	OR 	FlagClientesMaisDeUmConsultorMesmaFilial=1,ConsultorUltimoPedido,
+    IF(NOT ISNULL(ConsultorCarteiraSiagri),ConsultorCarteiraSiagri,
+    'Prospect - '&Filial)))	AS	ConsultorTemp
+;
+LOAD
+	Filial,
+	%LinkConsultorProspect,
+    FlagClientePossuiVenda,
+   	ApplyMap('MapConsultorSiagri',HASH128(parceiroCRM,Filial),NULL())						AS	ConsultorCarteiraSiagri,
+    ApplyMap('MapClientesMaisDeUmConsultorNaMesmaFilial',HASH128(parceiroCRM,Filial),0)		AS	FlagClientesMaisDeUmConsultorMesmaFilial,
+   	ApplyMap('MapConsultor',parceiroCRM&Filial,null())										AS	ConsultorUltimoPedido
+FROM 
+	[lib://1.Transform/CloverCRM/TabPotencialTecnologico.qvd]
+(qvd);
+
+CALL subGeraQVD ('TabConsultorProspect','CloverCRM',1);
+
+
+TabCustoConsultor:
+LOAD
+	*,
+	IF(MesesTrabalhandotemp < 13, 'Até 1 Ano',
+    IF(MesesTrabalhandotemp < 25, '1 a 2 Anos',
+    'Mais de 3 Anos'))	AS	RangeMesesTrabalhando
+;
+LOAD
+	*,
+    ((year(today(2))*12)+month(today(2))) - (((year(tempMesesAdmitidos)*12)+month(tempMesesAdmitidos)))+1			AS	MesesTrabalhando,
+        ((year(today(2))*12)+month(today(2))) - (((year(DataAdmissaoConsultor)*12)+month(DataAdmissaoConsultor)))+1	AS	MesesTrabalhandotemp//Criado para utilizar a data de admissão
+
+;
+LOAD
+    trim(upper(MapSubString('RemoveAcento_Map',Nome)))		AS	%LinkConsultor,
+    Cargo		AS	CargoConsultor,
+    //2019 escolhido por ser a data inicial dos pedidos do CRM e da base carregada para o Aplicativo
+    IF(YEAR(Admissão)<2019,date(date#('01/01/2019')),Admissão)	as	tempMesesAdmitidos,
+    Admissão	AS	DataAdmissaoConsultor,
+    "Custo mês"	AS	ValorCustoConsultorMensal,
+    "Custo ano"	AS	ValorCustoConsultorAnual,
+    1			AS	FlagConsultorAtivo
+FROM
+	[lib://2.Arquivos/Marketing/Custo 2019 CTVs e Gerentes - MKT.xlsx]
+(ooxml, embedded labels, header is 2 lines, table is [CTVs e gerentes]);
+
+DROP FIELD MesesTrabalhandotemp;
+
+CALL subGeraQVD ('TabCustoConsultor','CloverCRM',1);
+
+
+//Transformacao para definir se o cliente é rural ou prospect.
+ClienteRuralProspect:
+LOAD
+    hash128( $(vTransformacaoDeTexto(Filial)),Ciclo,ClientePrincipal)	AS	%LinkClienteRuralProspect,
+    1										AS	FlagClienteRuralBrasil
+FROM 
+	[lib://1.Transform/CloverCRM/PedidosCRM_SIAGRI_MARGEM.qvd](qvd)
+WHERE
+	//Data escolhida para a trava dos ciclos.
+	 YEAR(DataEmissao) >=2018 and ValorPedidoMovimento>0
+
+;
+OUTER JOIN(ClienteRuralProspect)
+LOAD
+	hash128(Filial,Ciclo,parceiroCRM)	AS	%LinkClienteRuralProspect,
+    IF(FlagClientePossuiVenda=1,1,0)	AS	FlagClienteRuralBrasil,
+	IF(FlagClientePossuiVenda=0,1,0)	AS	FlagClienteProspect
+FROM 
+	[lib://1.Transform/CloverCRM/TabPotencialTecnologico.qvd](qvd)
+;
+
+CALL subGeraQVD ('ClienteRuralProspect','CloverCRM',1);
+
+
+
+MapTabRatingParceiro:
+MAPPING
+LOAD
+    hash128(MapSubString('RemoveAcento_Map',UPPER(TRIM(Nome))),Safra)	AS	%LinkRating,
+    "Atual Cliente"	AS	RatingAtual
+FROM 
+	[lib://2.Arquivos/Marketing/Rating.xlsx](ooxml, embedded labels, table is [Rating-Agrometrika])
+WHERE
+	[Atual Cliente] <> ' '
+;
+
+tempTabRatingParceiro:
+LOAD	DISTINCT
+    ParceiroPrincipal
+FROM
+	[lib://1.Transform/CloverCRM/TabParceiro.qvd]
+(qvd);
+LEFT JOIN(tempTabRatingParceiro)
+LOAD	DISTINCT
+	ChaveCiclo
+FROM 
+	[lib://1.Transform/CloverCRM/TabSafra.qvd]
+(qvd);
+
+TabRatingParceiro:
+LOAD
+	ApplyMap('MapTabRatingParceiro',HASH128(ParceiroPrincipal,ChaveCiclo),'S/ Rating')	AS	RatingParceiro,
+	HASH128(ParceiroPrincipal,ChaveCiclo)	AS	%LinkRating,
+	ParceiroPrincipal,
+    ChaveCiclo
+resident
+	tempTabRatingParceiro
+;
+
+DROP TABLE tempTabRatingParceiro;
+
+CALL subGeraQVD ('TabRatingParceiro','CloverCRM',1);

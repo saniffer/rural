@@ -1,0 +1,56 @@
+///$tab 17 - BaseVendidoSemesntes
+Temp:
+LOAD
+	CodigoUnidade,
+ 	CodigoProduto,
+    DataEmissao,
+    VlrUnitario,        
+    CustoTabela,
+    QtdSaldo,
+    GrupoNome,
+    CicloNome,
+    Quantidade,
+    FornecedorNome
+FROM [lib://1.Transform/BaseVendido.qvd](qvd);
+
+Temp1: 
+NoConcatenate
+Load
+	*,
+    Hash128(UnidadeCodigo, ProdutoCodigo) as PedidoCompraValorId;
+Load
+	Num(Num#(CodigoUnidade)) 	as UnidadeCodigo,
+    Num(Num#(CodigoProduto))	as ProdutoCodigo,
+  	Date(Floor(DataEmissao)) 	as Data,
+	VlrUnitario					as ValorUnitario,
+	CustoTabela					as CustoTabela,
+	QtdSaldo					as Saldo,
+    GrupoNome					as Grupo,
+    Quantidade,
+    CicloNome					as Ciclo,
+    FornecedorNome				as Fornecedor
+Resident Temp
+Where GrupoNome = 'SEMENTES';
+drop table Temp;
+
+BaseVendidoSementes:
+NoConcatenate
+LOAD
+    UnidadeCodigo,
+    ProdutoCodigo,
+	PedidoCompraValorId,
+    FirstSortedValue(DISTINCT ValorUnitario, -Data)	 	as ValorUnitario,
+    FirstSortedValue(DISTINCT Data, -Data) 				as Data,
+    FirstSortedValue(DISTINCT Saldo, -Data) 			as Saldo,
+    FirstSortedValue(DISTINCT CustoTabela, -Data) 		as CustoTabela,
+    FirstSortedValue(DISTINCT Quantidade, -Data) 		as Quantidade,
+    FirstSortedValue(DISTINCT Ciclo, -Data) 			as Ciclo,
+    FirstSortedValue(DISTINCT Fornecedor, -Data) 		as Fornecedor
+Group by 
+	PedidoCompraValorId,
+    UnidadeCodigo,
+    ProdutoCodigo; 
+Load * Resident Temp1;
+drop Table Temp1;
+Store BaseVendidoSementes into [lib://1.Transform/BaseVendidoSementes.qvd](qvd);
+Drop Table BaseVendidoSementes;

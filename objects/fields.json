@@ -1,1 +1,734 @@
-[]
+[
+  {
+    "qIsHidden": true,
+    "qIsSystem": true,
+    "qName": "$Field",
+    "qCardinal": 62,
+    "qTags": [
+      "$text",
+      "$hidden",
+      "$system",
+      "$key"
+    ],
+    "qSrcTables": []
+  },
+  {
+    "qIsHidden": true,
+    "qIsSystem": true,
+    "qName": "$FieldNo",
+    "qCardinal": 60,
+    "qTags": [
+      "$numeric",
+      "$integer",
+      "$hidden",
+      "$system"
+    ],
+    "qSrcTables": []
+  },
+  {
+    "qIsHidden": true,
+    "qIsSystem": true,
+    "qName": "$Fields",
+    "qCardinal": 2,
+    "qTags": [
+      "$numeric",
+      "$integer",
+      "$hidden",
+      "$system"
+    ],
+    "qSrcTables": []
+  },
+  {
+    "qIsHidden": true,
+    "qIsSystem": true,
+    "qName": "$Info",
+    "qCardinal": 1,
+    "qTags": [
+      "$text",
+      "$ascii",
+      "$hidden",
+      "$system"
+    ],
+    "qSrcTables": []
+  },
+  {
+    "qIsHidden": true,
+    "qIsSystem": true,
+    "qName": "$Rows",
+    "qCardinal": 2,
+    "qTags": [
+      "$numeric",
+      "$integer",
+      "$hidden",
+      "$system"
+    ],
+    "qSrcTables": []
+  },
+  {
+    "qIsHidden": true,
+    "qIsSystem": true,
+    "qName": "$Table",
+    "qCardinal": 2,
+    "qTags": [
+      "$text",
+      "$ascii",
+      "$hidden",
+      "$system",
+      "$key"
+    ],
+    "qSrcTables": []
+  },
+  {
+    "qName": "AnoEmissao",
+    "qCardinal": 5,
+    "qTags": [
+      "$numeric",
+      "$integer"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "BASE",
+    "qCardinal": 3,
+    "qTags": [
+      "$text"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "CFOP",
+    "qCardinal": 37,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "CFOPID",
+    "qCardinal": 35,
+    "qTags": [
+      "$numeric",
+      "$integer"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "CICLOERP",
+    "qCardinal": 18,
+    "qTags": [
+      "$numeric",
+      "$integer",
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "CLIENTEERP",
+    "qCardinal": 6980,
+    "qTags": [
+      "$numeric",
+      "$integer",
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "CLIENTEID",
+    "qCardinal": 0,
+    "qTags": [],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "DATAATUALIZACAO",
+    "qCardinal": 10,
+    "qTags": [
+      "$numeric",
+      "$integer",
+      "$text",
+      "$ascii",
+      "$timestamp",
+      "$date"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "DESCRICAOCICLO",
+    "qCardinal": 18,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "DESCRICAOFATURA",
+    "qCardinal": 0,
+    "qTags": [],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "DESCRICAOFILIAL",
+    "qCardinal": 63,
+    "qTags": [
+      "$text"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "DESCRICAOGRUPO",
+    "qCardinal": 16,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "DESCRICAOMATERIAL",
+    "qCardinal": 3404,
+    "qTags": [
+      "$text"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "DESCRICAOSITUACAONFE",
+    "qCardinal": 0,
+    "qTags": [],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "DESCRICAOSUBGRUPO",
+    "qCardinal": 39,
+    "qTags": [
+      "$text"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "DOCUMENTO",
+    "qCardinal": 0,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "DTEMISSAO",
+    "qCardinal": 1254,
+    "qTags": [
+      "$numeric",
+      "$integer",
+      "$timestamp",
+      "$date"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "DiaEmissao",
+    "qCardinal": 31,
+    "qTags": [
+      "$numeric",
+      "$integer"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "FATURAID",
+    "qCardinal": 455073,
+    "qTags": [
+      "$numeric",
+      "$integer"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "FILIALERP",
+    "qCardinal": 37,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "FILIALGERENCIAL",
+    "qCardinal": 64,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "FILIALID",
+    "qCardinal": 27,
+    "qTags": [
+      "$numeric",
+      "$integer"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "FILIALNOME",
+    "qCardinal": 27,
+    "qTags": [
+      "$text"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "GRUPOPRODUTOERP",
+    "qCardinal": 7,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "GRUPOPRODUTOID",
+    "qCardinal": 6,
+    "qTags": [
+      "$numeric",
+      "$integer"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "GRUPOPRODUTONOME",
+    "qCardinal": 6,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "ITEMFATURA",
+    "qCardinal": 31,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "ITEMORDEM",
+    "qCardinal": 0,
+    "qTags": [],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "MARCAERP",
+    "qCardinal": 207,
+    "qTags": [
+      "$text"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "MARCAID",
+    "qCardinal": 0,
+    "qTags": [],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "MATERIALERP",
+    "qCardinal": 2935,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "MUNICIPIOERP",
+    "qCardinal": 477,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "MUNPAIERP",
+    "qCardinal": 1,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "MêsEmissao",
+    "qCardinal": 12,
+    "qTags": [
+      "$numeric",
+      "$integer"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "NFE",
+    "qCardinal": 0,
+    "qTags": [],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "NOMECLIENTE",
+    "qCardinal": 6992,
+    "qTags": [
+      "$text"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "NOMEMUNICIPIO",
+    "qCardinal": 472,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "NOMEREPRESENTANTE",
+    "qCardinal": 310,
+    "qTags": [
+      "$text"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "NOMEVINCULO",
+    "qCardinal": 5758,
+    "qTags": [
+      "$text"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "NUMEROFATURA",
+    "qCardinal": 69742,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "ORDEMVENDA",
+    "qCardinal": 0,
+    "qTags": [],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "PRODUTOID",
+    "qCardinal": 0,
+    "qTags": [
+      "$numeric",
+      "$integer",
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "Produto",
+    "qCardinal": 357,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "Produto"
+    ]
+  },
+  {
+    "qName": "ProdutoCodigo",
+    "qCardinal": 993,
+    "qTags": [
+      "$numeric",
+      "$integer"
+    ],
+    "qSrcTables": [
+      "Produto"
+    ]
+  },
+  {
+    "qName": "REGIONALID",
+    "qCardinal": 7,
+    "qTags": [
+      "$numeric",
+      "$integer"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "REGIONALNOME",
+    "qCardinal": 7,
+    "qTags": [
+      "$text"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "REPFILIALERP",
+    "qCardinal": 40,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "REPRESENTANTEERP",
+    "qCardinal": 316,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "REPRESENTANTEID",
+    "qCardinal": 0,
+    "qTags": [],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "SERIEFATURAMENTO",
+    "qCardinal": 19,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "SITUACAONFE",
+    "qCardinal": 2,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "SUBGRUPOERP",
+    "qCardinal": 20,
+    "qTags": [
+      "$numeric",
+      "$integer",
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "SUBGRUPOID",
+    "qCardinal": 24,
+    "qTags": [
+      "$numeric",
+      "$integer"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "SUBGRUPONOME",
+    "qCardinal": 12,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "TIPO",
+    "qCardinal": 4,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "TIPOCFOPDESCRICAO",
+    "qCardinal": 2,
+    "qTags": [
+      "$text"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "TIPOFATURA",
+    "qCardinal": 0,
+    "qTags": [],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "UFERP",
+    "qCardinal": 20,
+    "qTags": [
+      "$text",
+      "$ascii"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "UNIDADECOMERCIAL",
+    "qCardinal": 0,
+    "qTags": [],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "VALOR",
+    "qCardinal": 385935,
+    "qTags": [
+      "$numeric"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "VALORREAL",
+    "qCardinal": 272112,
+    "qTags": [
+      "$numeric"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  },
+  {
+    "qName": "VINCULOERP",
+    "qCardinal": 5778,
+    "qTags": [
+      "$numeric",
+      "$integer"
+    ],
+    "qSrcTables": [
+      "TabFato"
+    ]
+  }
+]

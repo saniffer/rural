@@ -1,31 +1,415 @@
 [
   {
     "qInfo": {
-      "qId": "0cd24bdb-8b83-469d-a5cb-36a1b43607bd",
+      "qId": "0284919e-d337-4fd0-ad59-41e6dda8b67b",
       "qType": "variable"
     },
     "qMetaDef": {},
-    "qName": "vGeracaoDataCongelamento",
+    "qName": "vAno",
     "qNumberPresentation": {
       "qType": "U",
       "qnDec": 10,
       "qUseThou": 0
     },
-    "qDefinition": "DATE(DATE#('20200326','YYYYMMDD'))\tAS\tDataCongelamento"
+    "qDefinition": "2023",
+    "qIsScriptCreated": true
   },
   {
     "qInfo": {
-      "qId": "2e359671-1e12-4306-96ea-73c55e395959",
+      "qId": "03f1e227-b847-4efc-b765-f303159bc671",
       "qType": "variable"
     },
     "qMetaDef": {},
-    "qName": "vMes",
+    "qName": "vMaiorDataControladoria",
     "qNumberPresentation": {
       "qType": "U",
       "qnDec": 10,
       "qUseThou": 0
     },
-    "qDefinition": "jul 2019"
+    "qDefinition": "43982",
+    "tags": [],
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "05a40a91-3a45-4ae6-bcdf-85e7063bc22e",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "1",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "1",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "0f5555a4-26ff-4055-bef7-fa208476f521",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "2",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "2"
+  },
+  {
+    "qInfo": {
+      "qId": "174423ee-ad40-4690-a4b9-0d863ea3b48a",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vDirLog",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "LIB://4.Logs",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "1b519c04-af32-4577-866d-2f78e92c12cd",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vCFOPCompra",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "'1202*','1504*','2201*','2202*','2504*','5101*','5102*','5106*','5114*','5115*','5117*','5119*','5120*','5502*','5933*','6102*','6106*','6114*','6115*','6117*','6119*','6120*','6502*','6933*'"
+  },
+  {
+    "qInfo": {
+      "qId": "30eb033d-9e92-4376-b459-c494e695041b",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempoExecucao2",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "23/11/2020 03:21:52",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "323c2017-bd09-4d4b-a768-c48743de843d",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempo2",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "23/11/2020 03:20:16",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "3288debd-f684-4179-b5a3-31093874b824",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "v.sub.interval.campo.ValorProximoDesconto",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "ValorProximoDesconto as ValorProximoDescontoSimulacao"
+  },
+  {
+    "qInfo": {
+      "qId": "3abb42b9-3374-46cf-807d-2ab0d269a7a8",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempo4",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "23/11/2020 03:20:22",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "3b0930a2-86a4-4be5-b306-f4b49177b78b",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "v.sub.interval.campo.ValorProximoDesconto_campo",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "ValorProximoDescontoSimulacao"
+  },
+  {
+    "qInfo": {
+      "qId": "4327b017-b603-4d08-9b62-d717d4b0c215",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempoExecucao5",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "23/11/2020 03:22:12",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "453d8574-666a-4e70-8b70-123d6793c27a",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempoExecucao10",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "23/11/2020 03:22:40",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "4b5b4525-a808-477d-8082-ea6ef7a7c74d",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempo5",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "19/11/2020 22:08:01"
+  },
+  {
+    "qInfo": {
+      "qId": "52978cfd-85f2-47e7-a487-a54cd02d7f93",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempoExecucao11",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "26/05/2020 08:23:12"
+  },
+  {
+    "qInfo": {
+      "qId": "5b5a7618-e180-4f41-bcb8-d88fa127dfff",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempoExecucao6",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "23/11/2020 03:22:14",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "5beaadee-898a-4960-bc58-5439ca13be52",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempoExecucao12",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "26/05/2020 08:23:12"
+  },
+  {
+    "qInfo": {
+      "qId": "5d0f4ace-9dfa-4153-b2e2-528ad12f422b",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTransformacaoTabelaEmCiclo",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "IF(WildMatch($1,'*17/18*'),'SAFRA 2017/2018',\r\n   \tIF(WildMatch($1,'*19/20*'),'SAFRA 2019/2020',\r\n    IF(WildMatch($1,'*18/19*'),'SAFRA 2018/2019',\r\n  \tIF(WildMatch($1,'*20/21*'),'SAFRA 2020/2021',\r\n    IF(WildMatch($1,'*2018*'),'SAFRINHA 2018',\r\n    IF(WildMatch($1,'*2017*'),'SAFRINHA 2017',\r\n    IF(WildMatch($1,'*2019*'),'SAFRINHA 2019',\r\n    IF(WildMatch($1,'*2020*'),'SAFRINHA 2020',\r\n   \tIF(WildMatch($1,'*2021*'),'SAFRINHA 2021'\r\n    )))))))))",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "5d857ae9-4859-4be8-880e-053f4d5378b8",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vAnoAnterior",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "2021",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "67bb6341-cb51-4e03-ac80-46d22dccfd4a",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempoInicio2",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "19/11/2020 12:05:27"
+  },
+  {
+    "qInfo": {
+      "qId": "6d555043-8478-44c7-9115-61463e33adfc",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempo1",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "23/11/2020 03:20:13",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "6e4f7ffe-4df4-4b32-8ec6-af26e9f5f1b2",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempoExecucao8",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "23/11/2020 03:22:21",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "71d38d7d-0e66-4b3f-b69b-86509a9ef402",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTransformacaoDeTexto",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "UPPER(TRIM(MapSubString('RemoveAcento_Map',$1)))",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "72900fa7-32db-4d5c-8ea1-f6ca49c1bb6c",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempoExecucao4",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "23/11/2020 03:21:52",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "7559f81e-f3ad-4012-a7d1-76c0c4d3b926",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "v.sub.interval.campo.ValorProximoMarco",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "Maximo as ValorProximoMarcoSimulacao"
+  },
+  {
+    "qInfo": {
+      "qId": "7f729e7e-44ef-4f87-bee9-c0cf5195276a",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "0",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "0",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "864d8ec2-5b22-46e8-a167-a9cfae1ea121",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTransformacaoChaveCiclo",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "IF(Match($1,'SAFRA 2013/2014','SAFRINHA 2014'),'13-14',IF(Match($1,'SAFRA 2014/2015','SAFRINHA 2015'),'14-15',IF(Match($1,'SAFRA 2015/2016','SAFRINHA 2016'),'15-16',IF(Match($1,'SAFRA 2016/2017','SAFRINHA 2017'),'16-17',IF(Match($1,'SAFRA 2017/2018','SAFRINHA 2018'),'17-18',IF(Match($1,'SAFRA 2018/2019','SAFRINHA 2019'),'18-19',IF(Match($1,'SAFRA 2019/2020','SAFRINHA 2020'),'19-20',IF(Match($1,'SAFRA 2020/2021','SAFRINHA 2021'),'20-21',IF(Match($1,'SAFRA 2021/2022','SAFRINHA 2022'),'21-22',NULL())))))))))",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "8949b9de-d978-4613-8c96-be0eb6ddb51a",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vRightAno",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "22",
+    "qIsScriptCreated": true
   },
   {
     "qInfo": {
@@ -39,20 +423,242 @@
       "qnDec": 10,
       "qUseThou": 0
     },
-    "qDefinition": "11/07/2019"
+    "qDefinition": "10/07/2019"
   },
   {
     "qInfo": {
-      "qId": "acce5c88-9cc9-4b38-b0d5-bbc99b170442",
+      "qId": "a3021d0a-cbc6-472a-a967-3f65fc9cd008",
       "qType": "variable"
     },
     "qMetaDef": {},
-    "qName": "vDataAutal",
+    "qName": "vDirScript",
     "qNumberPresentation": {
       "qType": "U",
       "qnDec": 10,
       "qUseThou": 0
     },
-    "qDefinition": "20200703"
+    "qDefinition": "LIB://3.Script",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "a7a60999-9cb5-45f7-affe-dfed2fd9a02d",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vDirExtract",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "LIB://0.Extract",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "accc80ec-06c0-4985-a336-d2e85dc905be",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempo3",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "23/11/2020 03:20:17",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "acf6d655-0a53-49b0-b9fe-db906e8050d2",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vDirArquivo",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "LIB://2.Arquivos",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "be0bacb9-1135-4054-9bb5-3f0f97e85c48",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempoExecucao9",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "23/11/2020 03:22:21",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "bef3f204-f913-4505-b314-978c52c291f5",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vDirTransform",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "LIB://1.Transform",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "c1ef8e6a-36a1-4946-baca-7ef4278f79c0",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "v.sub.interval.campo",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "PercDescontoCampanhaBayer\tAS PercDescontoSimulacaoCampanhaBayer"
+  },
+  {
+    "qInfo": {
+      "qId": "c6f19a5d-0009-4534-8153-231f51cefa32",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vHoje",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "20201123",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "cbc70462-87ac-4ff0-a930-501fe32d68d5",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vCaracterAspasSimples",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "'",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "cee2a98e-a85a-44d0-bbc1-a03ee6ebc335",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vRangeSet",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "floor(Rand() * ($1-$2 ) + $2)"
+  },
+  {
+    "qInfo": {
+      "qId": "d75e46fc-47a5-4e71-8eb1-1906a2b235e9",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempoExecucao",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "26/05/2020 08:23:04"
+  },
+  {
+    "qInfo": {
+      "qId": "df63ad8e-6cde-40f2-9e99-ca698e158602",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempoExecucao3",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "23/11/2020 03:21:52",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "e28ae451-9dbc-4c87-ac3c-cc8ebd7130d2",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vRightAnoAnterior",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "21",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "e4358f61-717e-4be1-a466-10be1a7c9931",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTempoExecucao7",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "23/11/2020 03:22:21",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "e4d28da7-7fa3-4997-a8ac-63c0f6d6c50c",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "vTransformacaoCiclo",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "IF(WildMatch($1,'*13/14*'),'SAFRA 2013/2014',IF(WildMatch($1,'*2014*'),'SAFRINHA 2014',IF(WildMatch($1,'*14/15*'),'SAFRA 2014/2015',IF(WildMatch($1,'*2015*'),'SAFRINHA 2015',IF(WildMatch($1,'*15/16*'),'SAFRA 2015/2016',IF(WildMatch($1,'*2016*'),'SAFRINHA 2016',IF(WildMatch($1,'*16/17*'),'SAFRA 2016/2017',IF(WildMatch($1,'*2017*'),'SAFRINHA 2017',IF(WildMatch($1,'*17/18*'),'SAFRA 2017/2018',IF(WildMatch($1,'*2018*'),'SAFRINHA 2018',IF(WildMatch($1,'*18/19*'),'SAFRA 2018/2019',IF(WildMatch($1,'*2019*'),'SAFRINHA 2019',IF(WildMatch($1,'*19/20*'),'SAFRA 2019/2020',IF(WildMatch($1,'*2020*'),'SAFRINHA 2020',IF(WildMatch($1,'*20/21*'),'SAFRA 2020/2021',IF(WildMatch($1,'*2021*'),'SAFRINHA 2021',IF(WildMatch($1,'*21/22*'),'SAFRA 2021/2022',IF(WildMatch($1,'*2022*'),'SAFRINHA 2022',NULL()))))))))))))))))))",
+    "qIsScriptCreated": true
+  },
+  {
+    "qInfo": {
+      "qId": "e9289679-8a75-4d7d-b518-d01d4e2ed683",
+      "qType": "variable"
+    },
+    "qMetaDef": {},
+    "qName": "v.sub.interval.campodesconto",
+    "qNumberPresentation": {
+      "qType": "U",
+      "qnDec": 10,
+      "qUseThou": 0
+    },
+    "qDefinition": "PercDescontoSimulacaoCampanhaBayer"
   }
 ]

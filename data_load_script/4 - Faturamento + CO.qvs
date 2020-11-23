@@ -1,0 +1,6 @@
+///$tab 4 - Faturamento + CO
+//Transforma VW_SAIDAS_FATURADAS
+call sTransformacaoSaidasFaturadas;
+
+//UNIFICA BASE CONTROLADORIA E SAIDAS FATURADAS
+call sTransformacaoPosicaoControladoria;

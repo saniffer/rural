@@ -1,0 +1,257 @@
+///$tab 5 - Margem
+MapInscricaoEstadualParceiroPropriedade:
+MAPPING
+LOAD 
+	hash128(Propriedade,num(num#(CodParceiro))),
+    InscricaoEstadual
+FROM 
+	[lib://1.Transform/Siagri/TabPropriedade.qvd]
+(qvd);
+
+MapIdSituacaoPedidoSituacaoPedido:
+MAPPING
+LOAD
+ text(SituacaoPedidoId),
+ SituacaoPedido
+FROM 
+  [lib://1.Transform/TabSituacaoPedido.qvd]
+(qvd);
+
+LET vTempo1 = now();
+
+tempPedidosCRM_SIAGRI_MARGEM:
+LOAD
+    *,
+    ApplyMap('MapAgrupadorEspecialidades',CodProdutoSiagri,null())						AS	ProdutoEspecialidades,
+    ApplyMap('MapCodProdutosCorteva',hash128(CodProdutoSiagri,RegiaoCorteva),null())	AS	ProdutoCampanhaCorteva
+;
+LOAD
+    *,
+    ApplyMap('MapMarcaProduto',CodProdutoSiagri,null())	AS	MarcaProduto,
+    ApplyMap('MapAgrupadorFornecedor',Fornecedortemp,Fornecedortemp)	AS	Fornecedor,
+    DescricaoPedidoTipo													AS	[Base Analisada],
+    hash128(ClientePrincipal) 											AS	%LinkSegmentacaoParceiro,
+    HASH128(PurgeChar(upper(trim(ClientePrincipal)),' '))				AS	%LinkPerfilCompraParceiro,
+    hash128(ClientePrincipal,ChaveCiclo)								AS	%LinkClienteChaveCiclo,
+
+    HASH128(DataCongelamento,CPFCnpjCliente,DiretoriaCampanhaBayer2020,DescricaoPedidoTipo)							AS	%LinkGatilhoCampanhaBayer2020,
+    HASH128(DataCongelamento,CPFCnpjCliente,DiretoriaCampanhaBayer2020,DescricaoPedidoTipo)							AS	%LinkClientesCompraramXpro,
+    HASH128(DataCongelamento,CPFCnpjCliente,DiretoriaCampanhaBayer2020,DescricaoPedidoTipo)							AS	%LinkGatilhoAceleradoresCTV,
+    HASH128(DataCongelamento,CPFCnpjCliente,DiretoriaCampanhaBayer2020,DescricaoPedidoTipo,Vendedor,ProdutoCampanhaBayer)	AS	%LinkRetornoAceleradoresCTV,
+    HASH128(NumeroPedido,Filial,DescricaoPedidoTipo,$(vDataCongelamento))	AS %ChavePedidosMargemNegativa,
+    Hash128(CPFCnpjCliente,DiretoriaCampanhaBayer2020)							AS	CodCpfCnpjDiretoria,
+
+    Hash128(CodProdutoSiagri,NumeroPedidoOrigemCRM,DataCongelamento)			AS	%LinkCrmSiagri,//Link entre o CRM eo Siagri
+    hash128(CodProdutoSiagri,DiretoriaCampanhaBayer2020)						AS	%LinkAgrupadorCampanhaBayer2020,
+          //Corteva
+    ApplyMap('MapRegiaoCorteva',RegionalSemAscento,null())				AS	RegiaoCorteva
+;
+LOAD
+	*,
+	Textbetween(Diretoria,'Diretoria ','')	AS	DiretoriaSemDir,
+	ApplyMap('MapAgrupadorCampanhaBayer',CodProdutoSiagri,NULL())	AS	ProdutoCampanhaBayer,
+    ApplyMap('MapDiretoriaCampanhaBayer',$(vTransformacaoDeTexto(Regional)),null())			AS	DiretoriaCampanhaBayer2020,
+    $(vTransformacaoChaveCiclo(Ciclo)) 					AS 	ChaveCiclo,
+    if(Match(NumeroPedidoOrigemCRM,'2740036PV','2610999PV'),1,0)	as	FlagPedidosUsarMargemCrm,//Pedidos uqe devem usar diretamente a margem do CRM.
+    CustoTabelaProdutotemp*QtdProduto 							AS CustoTotal,
+	IF(DescricaoPedidoTipo='Saldo',ReceitaProduto,0)		AS	ValorPedidoSaldo,
+    IF(DescricaoPedidoTipo='Movimento',ReceitaProduto,0)	AS	ValorPedidoMovimento
+
+;
+LOAD
+	DataCongelamento,
+    ApplyMap('MapIdSituacaoPedidoSituacaoPedido',Text(SITU_PED),null())	AS	SituacaoPedido,
+	ApplyMap('MapInscricaoEstadualParceiroPropriedade',hash128(PROPRIEDADEDESCRICAO,num(num#(CLIENTEERP))),null())	as	InscricaoEstadual,
+	ApplyMap('MapItemPedidoCulturaSiagri',HASH128(num(num#(NUMEROPEDIDO)),	num(num#(SERIEPEDIDO)),	num(num#(UNIDADEERP)),	num(num#(PRODUTOERP))),NULL())	AS	Cultura,
+    MapSubString('RemoveAcento_Map',UPPER(TRIM(PurgeChar(FORNECEDORNOME,'./\-'))))	AS	Fornecedortemp,
+    TABELANOME	as	TabelaNome,
+    num(num#(SERIEPEDIDO))	AS	SeriePedido,
+    $(vTransformacaoCiclo(TABELANOME))	AS Ciclo,
+   // AutoNumberHash128(UNIDADEERP,NUMEROPEDIDO,CLIENTEERP) AS %LinkMargem,
+  //  UNIDADEERP&'-'&NUMEROPEDIDO&'-'&CLIENTEERP&Date(DATAEMISSAO)&DESCRICAOTIPOPEDIDO AS %LinkMargemComercial,
+    TIPO,
+   // DATAATUALIZACAO,
+   	DATE(DATAVENCIMENTO)	AS	DataVencimento,
+    if(DESCRICAOTIPOPEDIDO='Pedido Venda','Movimento','Saldo')	as DescricaoPedidoTipo,
+    //UPPER(REGIONALNOME)&'-'&FILIALNOME				as LinkMapaRegional,
+   	CICLONOME				as CicloOrigemSiagri,
+    num(num#(UNIDADEERP))	as CodEmpresa,
+    VENDEDORNOME			as Vendedor,
+    
+    UPPER(MapSubString('RemoveAcento_Map',FILIALNOME))			AS 	Filial,
+    MapSubString('RemoveAcento_Map',upper(FILIALNOME))		AS	FilialSemAscento,
+   	upper(REGIONALNOME) 										AS 	Regional,
+    MapSubString('RemoveAcento_Map',upper(REGIONALNOME))		AS	RegionalSemAscento,
+    DIRETORIANOME			as Diretoria,
+    NUMEROPEDIDO			as NumeroPedido,
+    NUMEROPEDIDOORIGEM		as NumeroPedidoOrigemCRM,
+    ApplyMap('MapCpfCNPJCliente',num(num#(CLIENTEERP)),null())	AS	CPFCnpjCliente,
+    num(num#(CLIENTEERP))	as ClienteId,
+    MapSubString('RemoveAcento_Map',ApplyMap('MapVinculoParceiro',CLIENTENOME,CLIENTENOME))	AS	ClientePrincipal,
+    MapSubString('RemoveAcento_Map',CLIENTENOME)	as	Cliente,
+    Date(DATAEMISSAO)  		as DataEmissao,
+    num(num#(PRODUTOERP))	as CodProdutoSiagri,
+    num(num#(PRODUTOERP))	AS	ProdutoId,
+    PRODUTONOME				as Produto,
+    GRUPONOME				as Grupo,
+    SUBGRUPONOME			as SubGrupo,
+   // GRUPOCodProdutoSiagri			as ProdutoGrupoId,
+    GRUPOPRODUTONOME		as	%LinkProdutoGrupo,
+    if(GRUPOPRODUTONOME = 'GRANULADOS','FERTILIZANTES',
+    if(GRUPOPRODUTONOME = 'DEFENSIVOS','QUIMICO',
+    if(GRUPOPRODUTONOME = 'SEMENTE DE MILHO','SEMENTE DE MILHO',
+    if(GRUPOPRODUTONOME = 'SEMENTE DE SOJA','SEMENTE DE SOJA',
+    if(GRUPOPRODUTONOME = 'FOLIARES','ESPECIALIDADE',
+    if(GRUPOPRODUTONOME = 'OUTROS','OUTROS',GRUPOPRODUTONOME))))))  as ProdutoGrupo,
+    GRUPOPRODUTONOME,
+    SUBGRUPOPRODUTONOME		as ProdutoSubGrupo,
+    QUANTIDADE				as QtdProduto,
+    VALORUNITARIO			as VlrUnitarioProduto,
+    CUSTOTABELA				as CustoTabelaProdutotemp,
+	CUSTOTABELA				as CustoUnitarioOriginal,
+    CMV						as Cmv,
+    RECEITA					as ReceitaProduto,
+    if(TIPOPRAZO='Á Praz','Á Prazo',TIPOPRAZO)				as Prazo,
+    MARCA					as Marca,
+    Text(ESTA_PED)			as EstadoPedidoId,
+    Text(SITU_PED) 			as SituacaoPedidoId
+
+    
+   // RANGEMARGEM				as MargemRange
+FROM
+ 	[lib://0.Extract/PosicaoDiaria/VW_BI_MARGEMSEMANAL_$(vHoje).qvd](qvd)
+	//[lib://0.Extract/PosicaoDiaria_Unificada/VW_BI_MARGEMSEMANAL.qvd](qvd)
+WHERE
+	NOT MATCH(GRUPOPRODUTONOME,'GRAOS A GRANEL','GRAOS')
+    AND
+    RECEITA>0
+    AND
+    GRUPONOME <> 'EPI'
+;
+
+
+DROP FIELD Fornecedortemp;
+LET vTempo2 = now();
+
+LEFT JOIN  (tempPedidosCRM_SIAGRI_MARGEM)
+LOAD
+
+  Hash128(CodProdutoSiagri,numero_pedidoCRM,DataCongelamento)	as	%LinkCrmSiagri,//Link entre o CRM eo Siagri
+  idpedidovendaCRM,
+  dolar,
+  ValorUnitarioDolar,
+  CustoUnitarioDolar,
+   MapSubString('RemoveAcento_Map',
+  IF(ISNULL(CulturaCRM),CulturaCRMCommodity,CulturaCRM)
+  )as CulturaCRMtemp,
+  IdProdutoCRM,
+  CodProdutoSiagri,
+  safraCRM,
+  GrupoProduto,
+  numero_pedidoCRM,
+   data_vencimento_pedidoCRM,
+  CampanhaCRM,
+  PercentualdescontocampanhaCRM,  
+  custounitarioCRM,
+  valorunitario,
+	observacao
+FROM
+    [lib://1.Transform/CloverCRM/PedidosVendasCRM_Integrados.qvd](qvd)
+	//[lib://1.Transform/CloverCRM/PedidosVendasCRM_Integrados_HISTÓRICO.qvd](qvd)
+;
+
+LET vTempo3 = now();
+
+PedidosCRM_SIAGRI_MARGEM:
+LOAD
+//Campos criado para não matar a carga automatizada durante o load no APP.
+ValorPedidoMovimento			AS	ValorPedidoMovimento_Historico
+,ValorPedidoSaldo				AS	ValorPedidoSaldo_Historico
+,valortotalCRM					AS	valortotalCRM_Historico
+
+,ValorCustoTotalSaldo			AS	ValorCustoTotalSaldo_Historico
+,ValorCustoTotalMovimento		AS	ValorCustoTotalMovimento_Historico
+,CustoTotal						AS	CustoTotal_Historico
+,CPFCnpjCliente					AS	CPFCnpjCliente_Histórico
+,*
+;
+Load	
+    *,
+    IF(DescricaoPedidoTipo='Saldo',ValorMargemSiagri,0)	AS	ValorMargemSaldo,
+    IF(DescricaoPedidoTipo='Saldo',CustoTotal,0)		AS	ValorCustoTotalSaldo,
+    IF(DescricaoPedidoTipo='Movimento',ValorMargemSiagri,0)	AS	ValorMargemMovimento,
+    IF(DescricaoPedidoTipo='Movimento',CustoTotal,0)	AS	ValorCustoTotalMovimento
+
+;
+LOAD
+    *,
+	IF(SubGrupo='FOLIARES','FOLIARES',Grupo)				AS	GrupoProdutoConsideraFoliar,
+	ApplyMap('MapSubGrupoMarketing',$(vTransformacaoDeTexto(SubGrupo)),SubGrupo)	AS	ProdutoSubGrupoMarketing,
+    Hash128(InscricaoEstadual,ChaveCiclo,DataCongelamento)		AS	%LinkEspecialidadesPTA,
+    Hash128(InscricaoEstadual,Ciclo,DataCongelamento,Produto)	AS	%LinkEspecialidadesProdutoPTA,
+    ReceitaProduto	-	(CustoTabelaProduto*QtdProduto * IF(ISNULL(PercentualdescontocampanhaCRM),1,1 - PercentualdescontocampanhaCRM))	as ValorMargemSiagri
+;
+LOAD
+  *,
+
+  IF(FlagPedidosUsarMargemCrm=1,CustoUnitarioDolar,CustoTabelaProdutotemp)	AS	CustoTabelaProduto,
+
+  //CASO NÃO EXISTA NO CRM, DEVE UTILIZAR DO SIAGRI
+  IF(NOT ISNULL(CulturaCRMtemp),CulturaCRMtemp,
+  IF(NOT ISNULL(Cultura),Cultura,
+  'SOJA'))							AS	CulturaCRM,
+  IF(ISNULL(data_vencimento_pedidoCRM),DataVencimento,data_vencimento_pedidoCRM)	AS	DataVencimentoCRM,
+  ApplyMap('MapSubGrupoSegmentado',ProdutoSubGrupo,Grupo)						AS	GrupoProdutoSegmentado,
+  IF(ISNULL(IdProdutoCRM),ReceitaProduto,	ValorUnitarioDolar * QtdProduto)	AS	valortotalCRM,
+  IF(ISNULL(IdProdutoCRM),CustoTotal, 	CustoUnitarioDolar * QtdProduto) 		AS	custo_totalCrm,
+  IF(ISNULL(IdProdutoCRM),'Ori Siagri','Ori CRM') 								AS	OrigemMargem,
+
+    IF(DescricaoPedidoTipo='Saldo',HASH128(DataCongelamento,CPFCnpjCliente,RegiaoCorteva,'Saldo + Faturado'),null())						AS	%LinkGatilhoCampanhaCorteva2020SaldoFaturado,
+    IF(DescricaoPedidoTipo='Saldo',HASH128(DataCongelamento,CPFCnpjCliente,RegiaoCorteva,'Saldo + Faturado',ProdutoCampanhaCorteva),null())	AS	%LinkCustoCampanhaCorteva2020SaldoFaturado,
+        //CORTEVA
+    hash128(ProdutoCampanhaCorteva,RegiaoCorteva)	AS	%LinkAgrupadorCampanhaCorteva2020,
+    Hash128(CPFCnpjCliente,RegiaoCorteva)		    AS	CodCpfCnpjRegiao,
+    HASH128(DataCongelamento,CPFCnpjCliente,RegiaoCorteva,DescricaoPedidoTipo)							AS	%LinkGatilhoCampanhaCorteva2020,
+    HASH128(DataCongelamento,CPFCnpjCliente,RegiaoCorteva,DescricaoPedidoTipo,ProdutoCampanhaCorteva)	AS	%LinkCustoCampanhaCorteva2020
+
+RESIDENT
+  tempPedidosCRM_SIAGRI_MARGEM
+;
+
+
+DROP TABLE tempPedidosCRM_SIAGRI_MARGEM;
+
+LET vTempo4 = now();
+
+CALL subGeraQVD ('PedidosCRM_SIAGRI_MARGEM','CloverCRM',1);
+
+TabRangePedidoVenda:
+LOAD
+  %ChavePedidosMargemNegativa,
+  IF(Match(MargemRange_ResumoCrm,'<0%','0% a 5%'),MargemRange_ResumoCrm,null()) as MargemRange_ResumoCrmMenorQue5,
+  Match(MargemRange_ResumoCrm,'<0%','0% a 5%','5% a 10%','>10') as OrdemMargemRange,
+  MargemRange_ResumoCrm
+;
+LOAD
+  %ChavePedidosMargemNegativa,
+  IF(PercMargemPedido >=  0.2,1,0)	AS	FlagPedidoMaiorQue,
+  IF(PercMargemPedido <= -0.05,1,0)	AS	FlagPedidoMenorQue,
+  if(PercMargemPedido	< 0 	, '<0%',
+  if(PercMargemPedido	< 0.05	, '0% a 5%',
+  if(PercMargemPedido	< 0.10	, '5% a 10%','>10' ))) as MargemRange_ResumoCrm
+;
+LOAD
+  %ChavePedidosMargemNegativa,
+  ((((custo_totalCrm )/(valortotalCRM))-1)*-1) AS PercMargemPedido
+;
+LOAD
+  %ChavePedidosMargemNegativa,
+  SUM(valortotalCRM)	AS 	valortotalCRM,
+  SUM(custo_totalCrm)	AS	custo_totalCrm
+FROM
+	[LIB://1.Transform/CloverCRM/PedidosCRM_SIAGRI_MARGEM.qvd](QVD)
+GROUP BY
+      %ChavePedidosMargemNegativa
+;
+
+CALL subGeraQVD ('TabRangePedidoVenda','CloverCRM',1);

@@ -1,0 +1,120 @@
+///$tab 9 - Simulador
+FatPedidoVenda:
+LOAD
+	*,
+    IF(TipoVenda='Barter',TipoVenda,Prazo)												AS	PrazoBarter,
+;
+LOAD
+	IF(TipoVenda='Barter' OR (YEAR(DataVencimento)>YEAR(TODAY())),'A prazo','A vista')	AS	Prazo,
+    IF(ISNULL(ProdutosChaveTemp),'Outros',ProdutosChaveTemp)							AS	ProdutosChave,
+    IF(Match(IdUnidade,33, 37, 39),1,0)													AS	FlagParagominas,
+	*
+;
+LOAD
+	num(num#(UNIDADEERP))&'-'&num(num#(NUMEROPEDIDO))&'-'&num(num#(PRODUTOERP))	as Unidade_Pedido_Produto,
+    hash128(num(num#(UNIDADEERP)),num(num#(PRODUTOERP)))	AS	%LinkUnidadeProduto,
+    hash128(num(num#(CODIGOTABELA)),num(num#(PRODUTOERP)))	AS	%CodTabelaProdutoERP,
+    pick(WildMatch(UPPER(PRODUTONOME),'*FOX XPRO*','*FOX*','*SPHERE MAX*','*CONNECT*','*CROPSTAR*','*BELT*','*CERTERO*','*PODIUM*','*PROTREAT*','*TURBO*')
+    	,'FOX XPRO','FOX','SPHERE MAX','CONNECT','CROPSTAR','BELT','CERTERO','PODIUM','PROTREAT','TURBO') AS ProdutosChaveTemp,
+    IF(UPPER(NOMEMARCA)='BAYER',1,0)	AS	FlagBayer,
+    DATE(DATAVENCIMENTO)	AS	DataVencimento,
+    YEAR(DATAVENCIMENTO)	AS	AnoVencimento,
+    DATE(DATAEMISSAO)		AS	DataEmissao,
+    num#(num(CLIENTEERP))	AS	CodCliente,
+    CUSTOTABELA				AS	ValorCustoTabela,
+    TABELANOME				AS	TabelaPreco,
+    VENDEDORNOME			AS	Vendedor,
+    CICLONOME				AS	Safra,
+    PRODUTONOME				AS	Produto,
+    
+    HASH128(UPPER(CLIENTENOME))	AS	%LinkPerfilCompraParceiro,
+    CLIENTENOME				AS	Cliente,
+    CONDICAOPAGAMENTO		AS	CondicaoPagamento,
+    IF(WildMatch(CONDICAOPAGAMENTO,'*TROCA*'),'Barter','Venda')	AS	TipoVenda,
+    SUBGRUPONOME			AS	SubGrupo,
+    IF(WildMatch(SUBGRUPONOME,'*ADUBOS ESPECIAIS*'),1,0)	AS	FlagAduboEspecial,
+    GRUPONOME				AS	Grupo,
+    SITUACAOPEDIDO			AS	SituacaoPedido,
+    NUMEROPEDIDO			AS  NumeroPedido,
+    VALORSALDO				AS	ValorSaldo,
+    VALORTOTAL				AS	ValorTotal,
+    VALORUNITARIO			AS  ValorUnitario,
+    IF(TABELANOME ='TROCA DOLAR DINETEC SAFRA 19/20',1,0)	AS	FlagDinetec,
+    SALDO					AS	QtdSaldo,
+    UFCLIENTE				as	UF,
+    num(num#(PRODUTOERP))	AS	CodProduto,
+    num(num#(UNIDADEERP))	AS	IdUnidade,
+    NOMEMARCA				AS	Fornecedor,
+    text(CODIGOTABELA)		AS	CodTabelaPreco,
+    UNIDADEPRODUTO			AS	UnidadeProduto,
+    ESTADOPEDIDONOME		AS	EstadoPedido	
+FROM 
+	[lib://0.Extract/DW/congelados/FATPEDIDOVENDA.qvd]
+(qvd);
+
+CALL subGeraQVD ('FatPedidoVenda','DW',1);
+
+
+FatDadosVenda6:
+LOAD
+	*,
+   	RowNo()	as	IdFaturamento,
+    (ValorReceitaComCusto - ValorCMV) / ValorReceitaComCusto * ValorReceitaLiquida	AS	ValorMargemContribuicao
+;
+LOAD
+	*,
+    IF(FlagCFOPReceita=1,IF(ValorCustoMedio=0,0,ValorUnitario * QtdeReal),0)	AS	ValorReceitaComCusto,
+    IF(FlagCFOPReceita=1,ValorUnitario * QtdeReal,0)							AS	ValorReceitaLiquida,
+    IF(FlagCFOPZeraCMV=1 or FlagCFOPReceita=0,0, ValorCustoMedio * QtdeReal)	AS	ValorCMV,
+    IF(date(floor(VENCIMENTO)) - DataEmissaoOrcamento > 30,'A prazo','A vista') AS TipoPagamento,
+   	HASH128(Regional,Cliente,Grupo,Cultura)		AS 	%LinkPotencialTecnologico,
+;
+LOAD
+	VENCIMENTO,
+	HASH128(replace(trim(upper(PARCEIRO)),' ',''))  AS     %LinkPerfilCompraParceiro,
+	GRUPO_ORIGINAL									AS	Grupo,
+	PARCEIRO										AS	Cliente,
+	ApplyMap('MapCulturaSiagri',COD_CULTURA,null())	AS	Cultura,
+	ApplyMap('MapEmpresaCRM_Siagri',text(LOJA),null()) 	AS Regional,
+    Date(FLOOR(DATA_EMISSAO))						AS	DataEmissaoOrcamento,
+    MonthName(Date(DATA_EMISSAO))					AS	MesAnoDataEmissaoOrcamento,
+           	ApplyMap('MapEmpresaCRMFilial_Siagri',text(LOJA),null()) 	AS Filial,
+    DESC_PROD_ORIGINAL								AS	Produto,
+    MARCA_PRODUTO      								AS	Marca,
+    1												AS	FlagEsteMêsOrcamento,
+   	IF([CFOP]>500000,[QTDE_INO],[QTDE_INO] * -1)	AS	QtdeReal,
+    ApplyMap('MapCFOPReceita',LEFT(CFOP,4),0)		AS	FlagCFOPReceita,
+    ApplyMap('MapCFOPZeraCMV',CFOP,0)				AS	FlagCFOPZeraCMV,
+    text(LOJA)										AS	IdUnidade,
+    ApplyMAP('MapSubGrupoSimulador',UPPER(SUBGRUPO),NULL())	AS	SubGrupo,
+    VALOR_UNITARIO									AS	ValorUnitario,
+    CUSTO_MEDIO										AS	ValorCustoMedio,
+    text(COD_PARCEIRO)								AS	IdParceiro,
+    text(COD_PRODUTO)								AS  IdProduto,
+    CICLO											AS	Safra,
+    NOME_PES										AS	Consultor
+FROM 
+	[lib://0.Extract/VW_QLIK_VENDAS_ONLINE6.qvd](qvd)
+WHERE
+	NOT MATCH(GRUPO_ORIGINAL,'GRAOS A GRANEL','GRAOS')
+;
+
+CALL subGeraQVD ('FatDadosVenda6','DW',1);
+
+
+vw_bi_receitacompleta:
+LOAD
+	hash128(rowno(),'MesAnterior')	AS	IdFaturamento,
+    text(FILIALERP)	AS	IdUnidade,
+    APPLYMAP('MapCOdProdutoSubGrupoSimulador',NUM(NUM#(MATERIALERP)),NULL()) AS  SubGrupo,
+    RECEITALIQUIDA	AS	ValorReceitaLiquida,
+    MARGEM			AS	ValorMargemContribuicao,
+  	1				AS	FlagMêsAnteriorOrcamento,
+    YEAR(DATE(FLOOR(DTEMISSAO)))	AS	AnoEmissao,
+    MonthName(DATE(FLOOR(DTEMISSAO)))	AS	MesAnoEmissao
+    
+FROM
+	[lib://0.Extract/DW/congelados/vw_bi_receitacompleta.qvd](qvd)
+;
+
+CALL subGeraQVD ('vw_bi_receitacompleta','DW',1);
